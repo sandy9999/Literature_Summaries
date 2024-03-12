@@ -1,0 +1,152 @@
+\documentclass{article}
+\usepackage[
+    left=1.2in,
+    right=1.2in,
+    top=0.4in,
+    bottom=0.7in,
+    paperheight=11in,
+    paperwidth=8.5in
+]{geometry}
+
+\usepackage{layout}
+\title{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+\author{Sandhya Saravanan\\
+  \small MSR, India\\\\
+}
+\date{\vspace{-5ex}}
+
+\begin{document}
+\maketitle
+
+\section{Summary}
+Note: Implementation available
+\begin{enumerate}
+   \item Novel protocols for Secure Window Assignment
+   \begin{itemize}
+     \item Tumbling Window: Groups records into fixed length time buckets
+     \begin{description}
+     \item[Secure division with public divisor:] \underline{Motivation} - State of art protocols for fast division produce small errors acceptable in ML use cases but cause incorrect aggregation results as they end up in wrong windows with high probability. Therefore, TVA proposes error correction protocols for semi-honest and malicious secure division to compute tumbling windows. 
+     \item[Use case:] Per-hour energy consumption of smart grid
+     \end{description}
+     \item Gap Session Window 
+    \begin{description}
+     \item[Use case 1:] Identifies periods of "activity" followed by periods of "inactivity" such as average glucose level in a patient cohort during their sleep or exercise
+     \item[Use case 2:] Time periods when individual is moving
+     \end{description} 
+     \item Threshold Session Window
+     \begin{description}
+     \item[Use case:] Eating periods when glucose level exceeds a threshold 
+     \end{description}
+   \end{itemize}
+    \item Limitations of Prior works
+    \begin{itemize}
+       \item Waldo optimized for snapshot queries on single time interval, cannot efficiently perform recurring computations
+        \begin{description}
+            \item[TVA:] Performant secure window assignment protocols for fixed and custom length time intervals
+        \end{description}
+       \item Prior works only support global aggregations (total consumption for all postcodes) or limited additive keyed aggregation (requires data holders to pre-encode attribute domain i.e. all possible postcodes)
+         \begin{description}
+            \item[TVA:] Supports keyed aggregations (hourly energy consumption per postcode)
+        \end{description}
+       \item Prior works assume regular, ordered, public timestamps
+    \end{itemize}
+    \item Supported Workloads
+    \begin{itemize}
+       \item Temporal operators 
+        \begin{description}
+            \item[Snapshot queries that compute an aggregate over specific time interval]
+            \item[Window queries that compute an aggregate over multiple time intervals]: Tumbling Window operator, Gap Session Window operator, Threshold Session Window operator
+        \end{description}
+       \item Time agnostic operators 
+         \begin{description}
+            \item[Filtering:] 
+            \item[Sorting:] 
+            \item[Grouping:] 
+            \item[Distinct (special case of Grouping):] 
+            \item[Aggregations:] COUNT, SUM, MIN, MAX, TOP-K, AVG, STDEV, PERCENTILE
+            \item[Operations:] Logical (AND, OR, XOR), Arithmetic ($+$, $-$, $*$), Comparison ($\ge$, $\le$, $=$, $\neq$)
+        \end{description}
+    \end{itemize}
+\end{enumerate}
+
+\section{Setting}
+\textbullet{} \underline{Public} Data schema, type and no. of columns, no. of input records. \\
+\textbullet{} Supported i) Semi-honest 3 party, 1 corruption, replicated secret sharing (Araki) (ii) Malicious 4 party, 1 corruption, replicated secret sharing (Fantastic Four by Dalskov) \\
+\textbullet{} Query structure known to computing parties  
+
+\section{Prime Techniques}
+
+\subsection{Tumbling Window Operator}
+\underline{Example query:} COUNT over time intervals of length $\lambda$ across individuals in a cohort \\
+Consider n rows, t represents timestamp attribute 
+\begin{enumerate}
+\item Secure Division: $w_{id} = \left\lfloor \frac{t}{\lambda} \right\rfloor$ where $t$ is secret shared and $\lambda$ is public:
+\begin{itemize}
+\item For 1 record \\
+Communication: $2\ell_{t} + 2\log \lambda (\log \log \lambda) + \log \lambda + 1$ bits ($\ell_{t}$ represents no. of bits timestamp t is secret shared over) \\
+Rounds: $\log \log \lambda + 3$ rounds
+\item For n records \\
+Communication: $n(2\ell_{t} + 2\log \lambda (\log \log \lambda) + \log \lambda + 1)$ bits ($\ell_{t}$ represents no. of bits timestamp t is secret shared over) \\
+Rounds: $\log \log \lambda + 3$ rounds
+\end{itemize}
+\item Sort records by $w_{id}$ \\
+Communication: $O(n \log^2 n)$ gates i.e. $n \log^2 n c_{comp}$ bits where $c_{comp} = c \log g$ \\
+Rounds: $O(\log^2 n) rounds$
+\item Groupwise COUNT aggregation  \\
+Communication: $n \log n c_{eq}$ bits where $c_{eq} = c \log g$ \\
+Rounds: $O(\log n)$ rounds
+\end{enumerate}
+
+\section{Our Exploration}
+
+\subsection{Modified Tumbling Window Operator with Oblivious Radix Sort Primitives}
+Note: Oblivious Radix Sort Primitives from \cite{Ha22} \\
+\underline{Example query:} COUNT over time intervals of length $\lambda$ across individuals in a cohort \\
+Consider n rows, t represents timestamp attribute 
+\begin{enumerate}
+\item Secure Division: $w_{id} = \left\lfloor \frac{t}{\lambda} \right\rfloor$ where $t$ is secret shared and $\lambda$ is public:
+\begin{itemize}
+\item For 1 record \\
+Communication: $2\ell_{t} + 2\log \lambda (\log \log \lambda) + \log \lambda + 1$ bits ($\ell_{t}$ represents no. of bits timestamp t is secret shared over) \\
+Rounds: $\log \log \lambda + 3$ rounds
+\item For n records \\
+Communication: $n(2\ell_{t} + 2\log \lambda (\log \log \lambda) + \log \lambda + 1)$ bits ($\ell_{t}$ represents no. of bits timestamp t is secret shared over) \\
+Rounds: $\log \log \lambda + 3$ rounds
+\end{itemize}
+\item Sort records by $w_{id}$ \\
+Communication: $O((n+g) \log g \log (n+g))$ bits (Note that we add dummy rows for each value $\in [g]$ with Valid = 0, while we set Valid = 1 for other rows) \\
+Rounds: $O(\log g) rounds$
+\item Formation of private group vector $gv$
+Communication: $(n+g) c_{eq}$ bits where $c_{eq} = c \log g$ \\
+Rounds: $r_{eq}$ rounds
+\item GroupSum (gv, Valid)  \\
+Communication: $(n+g) \log n$ bits \\
+Rounds: 6 rounds
+\item Retain GroupSum only at indices marking starting of a group, set value at remaining indices to 0 \\
+Communication: $(n+g) c_{mult}$ bits where $c_{mult} = c \log n$\\
+Rounds: 1 rounds
+\item Sort the above by Valid attribute \\
+Communication: $(n+g) \log n$ bits \\
+Rounds: 6 rounds
+\end{enumerate}
+
+\subsection{Spline with Public Intervals technique from \cite{Eu21}}
+\underline{Example query:} COUNT over time intervals of length $\lambda$ across individuals in a cohort \\
+Consider n rows, t represents timestamp attribute 
+Communication: $n(\lambda l_t + 2l_t + g \log n)$ bits \\
+Rounds: $O(g)$ rounds?
+
+\section{Comments on Our Explorations}
+Modified Tumbling Window Operator with Primitives from \cite{Ha22} outperforms Spline with Public Intervals technique from \cite{Eu21} ($O(n\log g\log n)$ vs $O(ng\log n)$ ). For a large g, the latter technique is at a disadvantage. However, if the intervals are not equisized, the latter is at an advantage as $w_{id}$ cannot be computed without comparing with the start and end of the intervals. We are yet to come up with a use case to apply tumbling window operator with arbitrary sized windows.
+
+% Bibliography
+%-----------------------------------------------------------------
+\begin{thebibliography}{99}
+
+\bibitem{TVA22} Muhammad Faisal, Boston University; Jerry Zhang \emph{TVA: A multi-party computation system for secure and expressive time series analytics}, {USENIX} (2023)
+\bibitem{Ha22} Gilad Asharov, Koki Hamada, Dai Ikarashi, Ryo Kikuchi, Ariel Nof, Benny Pinkas, Katsumi Takahashi, Junichi Tomida \emph{Efficient Secure Three-Party Sorting with Applications to Data Analysis and Heavy Hitters}, {CCS} (2022)
+\bibitem{Eu21} Elette Boyle, Nishanth Chandran, Niv Gilboa, Divya Gupta, Yuval Ishai, Nishant Kumar, Mayank Rathee \emph{Function Secret Sharing for Mixed-Mode and Fixed-Point Secure Computation}, {Eurocrypt} (2021)
+
+\end{thebibliography}
+
+\end{document}
