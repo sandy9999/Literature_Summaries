@@ -40,7 +40,7 @@ Note: Implementation available
    \end{itemize}
     \item Limitations of Prior works
     \begin{itemize}
-       \item Waldo optimized for snapshot queries on single time interval, cannot efficiently perform recurring computations
+       \item Waldo optimized for snapshot queries on single time interval (2 DCF keys to check if a $<$ x $<$ b), cannot efficiently perform recurring computations
         \begin{description}
             \item[TVA:] Performant secure window assignment protocols for fixed and custom length time intervals
         \end{description}
@@ -122,7 +122,7 @@ Rounds: $r_{eq}$ rounds
 \item GroupSum (gv, Valid)  \\
 Communication: $(n+g) \log n$ bits \\
 Rounds: 6 rounds
-\item Retain GroupSum only at indices marking starting of a group, set value at remaining indices to 0 \\
+\item Retain GroupSum at indices marking starting of a group, set value at remaining indices to 0 \\
 Communication: $(n+g) c_{mult}$ bits where $c_{mult} = c \log n$\\
 Rounds: 1 rounds
 \item Sort the above by Valid attribute \\
@@ -132,7 +132,7 @@ Rounds: 6 rounds
 
 \subsection{Spline with Public Intervals technique from \cite{Eu21}}
 \underline{Example query:} COUNT over time intervals of length $\lambda$ across individuals in a cohort \\
-Consider n rows, t represents timestamp attribute 
+Consider n rows, t represents timestamp attribute \\ 
 Communication: $n(\lambda l_t + 2l_t + g \log n)$ bits \\
 Rounds: $O(g)$ rounds?
 
