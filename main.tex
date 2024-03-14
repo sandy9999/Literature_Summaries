@@ -1,1 +1,29 @@
+\documentclass{article}
+\usepackage[
+    left=1.2in,
+    right=1.2in,
+    top=0.4in,
+    bottom=0.7in,
+    paperheight=11in,
+    paperwidth=8.5in
+]{geometry}
+
+% Define custom command for title formatting and content
+\newcommand{\mytitle}[1]{%
+    \begingroup
+    \centering
+    {\LARGE\bfseries #1\par}
+%    \vskip 0.5em
+%    #2
+%    \par
+%    #3
+%    \par
+    \endgroup
+}
+
+\begin{document}
 \input{Secure_Window_Query/TVA.tex}
+\input{Secure_Window_Query/Waldo.tex}
+\input{Secure_Window_Query/Splinter.tex}
+\input{Secure_Window_Query/Dory.tex}
+\end{document}

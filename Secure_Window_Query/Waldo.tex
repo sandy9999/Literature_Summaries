@@ -1,0 +1,84 @@
+%\documentclass{article}
+%\usepackage[
+%    left=1.2in,
+%    right=1.2in,
+%    top=0.4in,
+%    bottom=0.7in,
+%    paperheight=11in,
+%    paperwidth=8.5in
+%]{geometry}
+
+%\usepackage{layout}
+\clearpage
+\mytitle{Waldo: A Private Time-Series Database from Function Secret Sharing \large \\Paper Summary}
+%\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+%\author{Sandhya Saravanan\\
+%  \small MSR, India\\\\
+%}
+%\date{\vspace{-5ex}}
+
+%\begin{document}
+%\maketitle
+\setcounter{section}{0} % Restart section numbering
+
+\section{Summary}
+Note: Implementation available
+\begin{enumerate}
+   \item Multi-predicate functionality
+    \begin{itemize}
+        \item Additive aggregates based on multiple predicates: Sum, Count, Mean, Variance, SD
+        \item Arbitrary aggregates over time interval: Max, Min, Top-K
+        \item Technique: FSS + Replicated Secret Sharing
+        \item Setting: Data contents, query filter values, search access patterns protected
+        \item Baseline: ORAM solutions
+    \end{itemize}
+   \item 3 party malicious security with honest majority
+   \item Constraint: Requires small feature size for multi-predicate evaluation
+   \item Constraint: Does not support retrieval of individual records, sorts, group by, joins
+\end{enumerate}
+
+\section{Techniques to calculate No. of Records Matching Single Predicate with Semi Honest Security}
+
+Applying FSS to \textbf{private queries} over \textbf{public database} is well studied. Waldo tries to apply FSS to \textbf{private queries} over \textbf{private database}. Using the \textbf{FSS for secure computation} idea for this would mean that each entry $x_i$ should be masked with independently sampled $r_i$, implying that each entry is mapped to a function $f(x-r_i)$. Therefore, size of function shares would match size of database. Therefore, this is not explored.
+
+(Inspired by Dory) Waldo builds a table of size n (no. of rows) x k (no. of candidate values for feature), for each feature. So for f features, we have f such tables. This is a shared one hot index. For each record, corresponding row in table set to 1 at location corresponding to record value and 0 elsewhere. For each entry $d_{i,j}$ of this table, server evaluates FSS key on current value j, multiplies by table entry $d_{i,j}$.
+
+Waldo observation 1: Feature size needs to be small. In general, only values compared in predicates need to use small feature size, not values being aggregated. Techniques to encode values in large domain using small feature size: \\
+\textbullet{} Bucketing intervals. Affects precision. Preserves ordering for range predicates, efficient to compute aggregate stats. Explored in prior works. \\
+\textbullet{} Hash maps/Bloom filters for ID fields \\
+\textbullet{} Conjunction of predicates e.g. representing time as timestamp or conjunction of year, month, day, hour, minute
+
+Private updates not supported. Appends are straightforward.
+
+\section{Techniques to calculate No. and Sum of Records Matching Multiple Predicates with Semi Honest Security}
+
+Form a filter i.e. vector of size n s.t. value at index i = 1 if record i $\in [n]$ matches predicate, 0 otherwise. For multiple predicates, filters need to be combined i.e. multiplied for logical AND. Therefore, Replicated Secret sharing.
+
+
+\section{Techniques to calculate Complex Aggregates (Min/Max/Top-K) over Time Range with Semi Honest Security}
+Salient features:\\
+\textbullet{} No server-server interaction \\
+\textbullet{} Time interval being queried not revealed \\
+\textbullet{} Valuable where query predicates are predefined \\
+
+Solution: Shared aggregate tree. Each leaf node contains (private) record value, each internal node contains (private) aggregate of its 2 children. Each leaf node has public timestamp. n leaf nodes ordered by time so that each internal node has a public time interval. Hence, client computes aggregate over some time interval by retrieving at most $2\log n + 1$ nodes. Query result = Aggregate of these intermediate aggregates.
+
+Client cannot directly request covering set from server, as this set reveals to server time period being queried.
+
+\underline{Strawman solution}: Client sends $2\log n + 1$ logical DPF keys to servers. \\
+\underline{Better solution}: Client generates DCF keys for leaf level of tree, sends keys to server. Each server evaluates its DCF keys on timestamp for each leaf separately for both $a < b$ and $x < b$. A leaf node is considered activated if its DCF evaluation is a secret share of 1 i.e. node is within range of client query. Activation result is obliviously copied to parent node. Client finally receives log n values for each of the single sided ranges which it uses to recover covering set for intersection of the 2 ranges.
+
+\textbf{Multiple Interval Containment FSS technique from Eurocrypt paper is incorporated in Waldo.}
+
+\section{Communication and Round Complexities}
+(To be added)
+
+% Bibliography
+%-----------------------------------------------------------------
+%\begin{thebibliography}{99}
+
+%\bibitem{TVA22} Muhammad Faisal, Boston University; Jerry Zhang \emph{TVA: A multi-party computation system for secure and expressive time series analytics}, {USENIX} (2023)
+
+%\end{thebibliography}
+
+%\end{document}
