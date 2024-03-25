@@ -1,0 +1,59 @@
+%\documentclass{article}
+%\usepackage[
+%    left=1.2in,
+%    right=1.2in,
+%    top=0.4in,
+%    bottom=0.7in,
+%    paperheight=11in,
+%    paperwidth=8.5in
+%]{geometry}
+
+%\usepackage{layout}
+\clearpage
+\mytitle{PRAC: Round-Efficient 3-Party MPC for Dynamic Data Structures \large \\Paper Summary}
+%\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+%\author{Sandhya Saravanan\\
+%  \small MSR, India\\\\
+%}
+%\date{\vspace{-5ex}}
+
+%\begin{document}
+%\maketitle
+\setcounter{section}{0} % Restart section numbering
+
+\section{Summary}
+\begin{enumerate}
+   \item Oblivious Binary Search
+    \begin{itemize}
+        \item Communication bandwidth: $O(\log n)$
+        \item Communication rounds: $O(\log n)$
+        \item Computation: $O(n)$
+    \end{itemize}
+   \item Oblivious HEAPINSERT
+    \begin{itemize}
+        \item Communication bandwidth: $O(\log n)$
+        \item Communication rounds: $O(\log \log n)$
+        \item Computation: $O(\log n)$
+    \end{itemize}
+   \item Oblivious HEAP\_EXTRACTMIN
+    \begin{itemize}
+        \item Communication bandwidth: $O(\log n)$
+        \item Communication rounds: $O(\log n)$
+        \item Computation: $O(n)$
+    \end{itemize}
+    \item First oblivious AVL Tree protocol for MPC
+    \begin{itemize}
+        \item Communication bandwidth (arbitrary insertion and deletion): $O(\log n)$
+        \item Communication rounds (arbitrary insertion and deletion): $O(\log n)$
+    \end{itemize}
+\end{enumerate}
+
+% Bibliography
+%-----------------------------------------------------------------
+%\begin{thebibliography}{99}
+
+%\bibitem{TVA22} Muhammad Faisal, Boston University; Jerry Zhang \emph{TVA: A multi-party computation system for secure and expressive time series analytics}, {USENIX} (2023)
+
+%\end{thebibliography}
+
+%\end{document}

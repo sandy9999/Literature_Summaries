@@ -1,0 +1,49 @@
+%\documentclass{article}
+%\usepackage[
+%    left=1.2in,
+%    right=1.2in,
+%    top=0.4in,
+%    bottom=0.7in,
+%    paperheight=11in,
+%    paperwidth=8.5in
+%]{geometry}
+
+%\usepackage{layout}
+\clearpage
+\mytitle{Efficient Arithmetic in Garbled Circuits \large \\Paper Summary}
+%\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+%\author{Sandhya Saravanan\\
+%  \small MSR, India\\\\
+%}
+%\date{\vspace{-5ex}}
+
+%\begin{document}
+%\maketitle
+\setcounter{section}{0} % Restart section numbering
+
+\section{Summary}
+GC in general is a constant-round technique. Let $\lambda$ be computational security parameter, $Z_M$ represent integers, $l$ be bit length of $Z_m$ values. We garble arithmetic circuits over $Z_m$.
+\begin{enumerate}
+   \item (Prior work) Boolean circuit based arithmetic
+    \begin{itemize}
+        \item Per gate Communication bandwidth: $O(l^2 \lambda)$
+    \end{itemize}
+   \item (Prior work) Boolean circuit based arithmetic but with Karatsuba's algorithm
+    \begin{itemize}
+        \item Per gate Communication bandwidth: $O(l^{1.585} \lambda)$
+    \end{itemize}
+   \item This work: Arithmetic garbled circuits from circular correlation robust hashes, the assumption underlying Free XOR garbling technique.
+    \begin{itemize}
+        \item Per gate Communication bandwidth: $O(l \lambda)$
+    \end{itemize}
+\end{enumerate}
+
+% Bibliography
+%-----------------------------------------------------------------
+%\begin{thebibliography}{99}
+
+%\bibitem{TVA22} Muhammad Faisal, Boston University; Jerry Zhang \emph{TVA: A multi-party computation system for secure and expressive time series analytics}, {USENIX} (2023)
+
+%\end{thebibliography}
+
+%\end{document}

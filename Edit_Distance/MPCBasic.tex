@@ -1,0 +1,60 @@
+%\documentclass{article}
+%\usepackage[
+%    left=1.2in,
+%    right=1.2in,
+%    top=0.4in,
+%    bottom=0.7in,
+%    paperheight=11in,
+%    paperwidth=8.5in
+%]{geometry}
+
+%\usepackage{layout}
+\clearpage
+\mytitle{Privacy-preserving edit distance computation using secret-sharing two-party computation \large \\Paper Summary}
+%\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+%\author{Sandhya Saravanan\\
+%  \small MSR, India\\\\
+%}
+%\date{\vspace{-5ex}}
+
+%\begin{document}
+%\maketitle
+\setcounter{section}{0} % Restart section numbering
+
+\section{Summary}
+\underline{Problem Statement}: Alice and Bob each has a DNA chain represented as a list of nucleotides (A, T, C, G). They want to compare edit distance of both chains, but without revealing their chain to each other.\\
+
+\underline{Cleartext solution}: Wagner-Fischer algorithm (Dynamic Programming) \\
+
+Given a string A of length n, and string B of length m, we want to find edit distance d(A, B). So for $1 \le i \le n$ and $1 \le j \le m$ \\
+
+$D(i, j) = min ( D(i-1, j) + 1, D(i, j-1) + 1, D(i-1, j-1) + t(i, j))$ \\
+
+with $t(i, j) = 1$ if $a_i \neq b_j$ and $0$ otherwise.\\
+
+\underline{Technique}
+\begin{enumerate}
+   \item 2PC MPC Protocol
+    \item Nucleotides encoded using binary representation 
+    \item Tinier used to compute equality test between pair of nucleotides in $Z_2$ 
+    \item Equality results are in the form of binary shares. Converted to arithmetic shares using daBits 
+    \item Communication: $mnc_{eq}$ + $mnc_{B2A}$ bits 
+    \item Comparison done using edaBits 
+    \item Secure min uses MIN\textsubscript{q}: Min. of a list of q numbers computed with communication $(2q-2)c_{mult} + (q-1)c_{comp}$ in $O(\log q)(r_{comp}+2)$ rounds
+    \item Blocker: Sequential nature of computation. Blows up no. of rounds
+    \item To bring down no. of rounds, this paper divides D into sub matrices of $\tau$ x $\tau$ and expands the recursive formulae (exact method described in paper using graph theory techniques). This brings down no. of rounds by $\tau$ but increases number of multiplications and comparisons, thereby increasing communication. This is because number of formulas in the min computation is $O(\tau 2^{3\tau})$
+    \begin{description}
+        \item[Communication: $O((nm/\tau ^2)(\tau ^22^{3\tau}-\tau))c_{comp} + O((nm/\tau ^2)(\tau ^22^{3\tau + 1}-2\tau))c_{mult}$]
+        \item[Rounds: $O((nm/\tau ^2)(3\tau + \log \tau)(r_{comp}+2))$ ]
+    \end{description}
+\end{enumerate}
+
+% Bibliography
+%-----------------------------------------------------------------
+%\begin{thebibliography}{99}
+
+%\bibitem{TVA22} Muhammad Faisal, Boston University; Jerry Zhang \emph{TVA: A multi-party computation system for secure and expressive time series analytics}, {USENIX} (2023)
+
+%\end{thebibliography}
+
+%\end{document}

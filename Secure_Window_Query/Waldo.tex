@@ -48,7 +48,7 @@ Waldo observation 1: Feature size needs to be small. In general, only values com
 \textbullet{} Hash maps/Bloom filters for ID fields \\
 \textbullet{} Conjunction of predicates e.g. representing time as timestamp or conjunction of year, month, day, hour, minute
 
-Private updates not supported. Appends are straightforward.
+Private updates not supported. \textbf{Appends are straightforward.}
 
 \section{Techniques to calculate No. and Sum of Records Matching Multiple Predicates with Semi Honest Security}
 
@@ -71,7 +71,25 @@ Client cannot directly request covering set from server, as this set reveals to 
 \textbf{Multiple Interval Containment FSS technique from Eurocrypt paper is incorporated in Waldo.}
 
 \section{Communication and Round Complexities}
-(To be added)
+Let N be number of records, m be number of features.
+
+For each feature $i \in [m]$, we store a table of size $N \times 2^{l_i}$ where $[2^{l_i}]$ represents all possible candidate values for feature $i$. 
+
+\underline{Cost}: $mN2^l$ bits, 1 round
+
+Given a single predicate query, suppose we want to compute no. of records matching the predicate. For every entry $d_{i, j}$ in the shared one hot index table D for record $i \in [N]$ and feature value $j \in [2^l]$, the server s evaluates its FSS key K on the current value j, multiplies the evaluation by the table entry $d_{i, j}$ and then computes \\
+
+EvalPred(s, K, D) $\leftarrow$ $\sum_{j=0}^{2^l-1}(Eval(K, j).\sum_{i=0}^N d_{i, j})$ \\
+
+For q such single predicate evaluations, \underline{Cost}: $q(\lambda \ell + 3 \log n)$ bits, 1 round \\
+
+In case of a multi-predicate query, the following is computed \\
+
+FilterPred(s, K, D) $\leftarrow$ $\sum_{i = 0}^{2^l-1}(Eval(K, i).d_{0, i}), ... , \sum_{i = 0}^{2^l-1}(Eval(K, i).d_{N-1, i})$ \\
+
+For q multi-predicate queries with p predicates per query:\\
+
+\underline{Cost}: $qp(\lambda \ell + 3n \log n)$ bits, 1 round (Check?)
 
 % Bibliography
 %-----------------------------------------------------------------

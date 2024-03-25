@@ -1,0 +1,57 @@
+%\documentclass{article}
+%\usepackage[
+%    left=1.2in,
+%    right=1.2in,
+%    top=0.4in,
+%    bottom=0.7in,
+%    paperheight=11in,
+%    paperwidth=8.5in
+%]{geometry}
+
+%\usepackage{layout}
+\clearpage
+\mytitle{Privacy-Preserving Search of Similar Patients in Genomic Data \large \\Paper Summary}
+%\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+%\author{Sandhya Saravanan\\
+%  \small MSR, India\\\\
+%}
+%\date{\vspace{-5ex}}
+
+%\begin{document}
+%\maketitle
+\setcounter{section}{0} % Restart section numbering
+
+\section{Summary}
+\underline{k-Closeness problem}: We have a server that holds a database DB of genomic sequences ($S_1$, . . . , $S_m$), whose approximate length and position inside the human genome are known. The client (doctor) holds a sequence query Q, and wishes to find the identities of the k sequences in the DB that have the smallest edit distance from Q (where k is a public parameter) \\
+
+\underline{Claim}: Secure MPC version of Wagner-Fischer algorithm (Dynamic Programming) and near linear time approximation of Andoni and Onak are prohibitively slow. Each query would take minutes to hours, and certainly won't scale to large datasets and long sequences. \\
+
+Given a string A of length n, and string B of length m, we want to find edit distance d(A, B). So for $1 \le i \le n$ and $1 \le j \le m$ \\
+
+$D(i, j) = min ( D(i-1, j) + 1, D(i, j-1) + 1, D(i-1, j-1) + t(i, j))$ \\
+
+with $t(i, j) = 1$ if $a_i \neq b_j$ and $0$ otherwise.\\
+
+The paper by Schneider et. al titled "EPISODE: Efficient Privacy-PreservIng Similar Sequence Queries on Outsourced Genomic DatabasEs" uses the approximation of edit distance proposed in this paper, optimizes and extends to outsourced scenario, where (to elucidate exact setting of outsourced scenario), in same 2PC setting. \\
+
+The paper by Nishat et. al titled "MPClan: Protocol Suite for Privacy-Conscious Computations" extends and optimizes EPISODE to n-party setting.
+
+\underline{Contributions}
+\begin{enumerate}
+   \item New approximation function for edit distance that highly utilizes the application domain i.e. distribution of genomic datail. Brings down cost from $O(|Q||S_i|)$ to $O(|Q|+|S_i|)$ 
+    \begin{itemize}
+        \item ApproxED($Q$, $S_i$) $\approx$ $\sum_{l=1}^n$ED$(Q_l, S_{i,l})$
+    \end{itemize}
+    \item 2PC protocol to compute above approx function 
+\end{enumerate}
+
+% Bibliography
+%-----------------------------------------------------------------
+\begin{thebibliography}{99}
+
+\bibitem{Ash18} Gilad Asharov, Shai Halevi, Yehuda Lindell, and Tal Rabin \emph{Privacy-Preserving Search of Similar Patients in
+Genomic Data}, {PETS} (2018)
+
+\end{thebibliography}
+
+%\end{document}
