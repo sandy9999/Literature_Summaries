@@ -1,0 +1,106 @@
+%\documentclass{article}
+%\usepackage[
+%    left=1.2in,
+%    right=1.2in,
+%    top=0.4in,
+%    bottom=0.7in,
+%    paperheight=11in,
+%    paperwidth=8.5in
+%]{geometry}
+
+%\usepackage{layout}
+\clearpage
+\mytitle{ACORN: Input Validation for Secure Aggregation \large \\Paper Summary}
+%\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+%\author{Sandhya Saravanan\\
+%  \small MSR, India\\\\
+%}
+%\date{\vspace{-5ex}}
+
+%\begin{document}
+%\maketitle
+\setcounter{section}{0} % Restart section numbering
+
+\section{Summary}
+\underline{Problem Statement}: Consider $S$ servers, i-th server has a private value $x_i$. The servers want to collectively learn the $\sum_{i \in S}\overline
+
+\begin{enumerate}
+    \item Operations covered
+    \begin{itemize}
+        \item X(A) where X = SUM, MEAN, Variance, STDDEV, Most popular (Approx), Heavy Hitters (Approx), Boolean OR and AND, MIN and MAX (Approx), Frequency COUNT, Intersection and Union of sets, Quality of arbitrary regression model ($R^2$), Least-squares regression, Stochastic gradient descent
+    \end{itemize}
+    \item Setting
+    \begin{itemize}
+        \item Consider that each client has a private data point
+        \item Clients send an encrypted share of their data to each aggregator
+
+    \end{itemize}
+    \item Security Setting
+    \begin{itemize}
+        \item Exact Correctness: If all servers are honest, servers learn f(.)
+        \item Privacy: If at least one server is honest, servers learn only f(.)
+        \item Robustness: Robust only against adversarial clients, not adversarial servers. 
+    \end{itemize}
+    \item Small no. of servers, Very large no. of clients 
+\end{enumerate}
+
+\section{Strawman Approach}
+
+\underline{Problem}: Consider that every device $i$ holds a value $x_i$ (0 or 1). We want to compute $f(x_1, ..., x_N) = x_1 + ... + x_N$ without learning any user's private value $x_i$. Suppose at least one server is honest and we have 3 servers. 
+
+\noindent \underline{Approach}
+\begin{enumerate}
+    \item Every device $i$ distributes 3-party secret shares of its value $x_i$ to the 3 servers.
+    \item At the end, each server holds a share of the total sum i.e. $f(x_1, ..., x_N)$
+\end{enumerate}
+
+\noindent \underline{Issues with Approach}: A single malicious client can undetectably corrupt the sum. Typical defenses (NIZKs) are costly.
+
+\section{Technical Contributions}
+\begin{enumerate}
+    \item Secret Shared Non-Interactive Proofs (SNIPs): Client proves that its encoded submission is well-formed i.e. proves that its shares sum up to 0 or 1.
+    \begin{itemize}
+        \item Servers hold shares of client's private value $x$
+        \item Servers hold an arbitrary public predicate Valid(.) expressed as an arithmetic circuit.
+        \item Want to test if Valid(x) holds, without leaking $x$.
+        \item \underline{Cost}: 0 public key operations for both Client and Server, $\theta(M)$ Client to Server Communication, $O(1)$ Server to Server Communication where M = No. of Multiplication gates in Valid(.) circuit. For specific Valid() circuits, it's possible to eliminate the $\theta(M)$ cost for Client to Server communication. (From presentation)
+    \end{itemize}
+    \item Aggregatable Encodings: Can compute sums privately $\implies$ Can compute f(.) privately (for many f's of interest)
+\end{enumerate}
+
+\section{Cost}
+Refer Table~\ref{asymptoticcost} (Taken from paper)
+
+\begin{table}
+	\centering
+	\begin{tabular}{ |r|r|r|r| } 
+		\hline
+		& \textbf{Exps} & \textbf{Muls} & \textbf{Proof Len} \\ \hline
+		Client  & $0$ & $M \log M$ & $M$ \\ \hline
+		& \textbf{Exps/Pairs} & \textbf{Muls} & \textbf{Data Transfer} \\ \hline
+		Server  & $0$ & $M\log M$ & $1$ \\ \hline
+	\end{tabular}
+	\caption{Asymptotic cost for PRIO. Client holds a vector $x \in \mathcal{F}^M$, each server $i$ holds a share $[x]_i$, and the client convinces the servers that each component of x is a $0/1$ value in $\mathcal{F}$}
+        \label{asymptoticcost}
+\end{table}
+
+
+\section{Overview of Technique}
+PRIO computes $f(x_1, ..., x_n)$ privately as follows:
+\begin{enumerate}
+    \item Each client encodes it data value $x$ using AFE Encode routine for the aggregation function $f$.
+    \item Every client splits its encoding $s$ shares and sends one share to each of $s$ servers.
+    \item Client uses a SNIP proof to convince the servers that its encoding satisfies the AFE Valid predicate.
+    \item Upon receiving a client's submission, the servers verify the SNIP to ensure that the encoding is well formed.
+    \item If the servers conclude that the encoding is valid, every server adds the first $k'$ components of the encoding share to its local running accumulator ($k'$ is a parameter of the AFE scheme).
+    \item Finally, after collecting valid submissions from many clients, every server publishes its local accumulator, enabling anyone to run the AFE Decode routine to compute the final statistic in the clear.
+\end{enumerate}
+% Bibliography
+%-----------------------------------------------------------------
+%\begin{thebibliography}{99}
+
+%\bibitem{HamCCS23} Gilad Asharov and Koki Hamada and Dai Ikarashi and Ryo Kikuchi and Ariel Nof and Benny Pinkas and Junichi Tomida \emph{Secure Statistical Analysis on Multiple Datasets: Join and Group-By}, {CCS} (2023)
+
+%\end{thebibliography}
+
+%\end{document}

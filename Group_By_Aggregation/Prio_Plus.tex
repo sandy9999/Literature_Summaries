@@ -1,0 +1,216 @@
+%\documentclass{article}
+%\usepackage[
+%    left=1.2in,
+%    right=1.2in,
+%    top=0.4in,
+%    bottom=0.7in,
+%    paperheight=11in,
+%    paperwidth=8.5in
+%]{geometry}
+
+%\usepackage{layout}
+\clearpage
+\mytitle{Secure Statistical Analysis on Multiple Datasets: Join and Group-By \large \\Paper Summary}
+%\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+%\author{Sandhya Saravanan\\
+%  \small MSR, India\\\\
+%}
+%\date{\vspace{-5ex}}
+
+%\begin{document}
+%\maketitle
+\setcounter{section}{0} % Restart section numbering
+
+\section{Summary}
+\begin{enumerate}
+    \item Operations covered
+    \begin{itemize}
+        \item JOIN - Inner, Left Outer, Right Outer, Full
+        \item GROUP BY.X where X = COUNT, SUM, MIN, MAX, MEDIAN, PERCENTILE
+    \end{itemize}
+    \item Key settings for Join
+    \begin{itemize}
+        \item unique-unique
+        \item unique-duplicate
+    \end{itemize}
+    \item Malicious security (Non-unanimous abort), Honest Majority
+    \item Theoretically for any no. of parties, although implementation uses 3 party setup
+\end{enumerate}
+
+\begin{table}
+	\centering
+	\begin{tabular}{ |r|r|r| } 
+		\hline
+		\textbf{Key} & \textbf{Values (m x d)} & \textbf{Valid} \\ \hline
+		$kL_1$  & $L_{1,1}$ & $vL_1$ \\ \hline
+		$...$  & $...$ & $...$ \\ \hline
+		$kL_m$  & $L_{m,1}$ & $vL_m$ \\ \hline
+	\end{tabular}
+	\caption{L: Left Table}
+\end{table}
+
+
+\begin{table}
+	\centering
+	\begin{tabular}{ |r|r|r| } 
+		\hline
+		\textbf{Key} & \textbf{Values (n x e)} & \textbf{Valid} \\ \hline
+		$kR_1$  & $R_{1,1}$ & $vR_1$ \\ \hline
+		$...$  & $...$ & $...$ \\ \hline
+		$kR_m$  & $R_{m,1}$ & $vR_m$ \\ \hline
+	\end{tabular}
+	\caption{R: Right Table}
+\end{table}
+
+\section{Right Outer Join Technique}
+\underline{Problem}: For each key $kR_i$ in L, append corresponding row from L. If $kR_i \notin L$ append row of zeroes. 
+
+\begin{itemize}
+\item $\sigma$ = GenPerm(kL, kR, kL)
+\item v = ApplyPerm($\sigma$, ($L_i$, $0^n$, $-L_i$)), $i \in [d]$
+\item w = PrefixSum(v)
+\item x = ApplyPerm($\sigma^{-1}$, w)
+\end{itemize}
+
+\section{GROUP BY.Median Technique}
+\begin{itemize}
+\item Sort table according to keys $-->$ Grouped order
+\end{itemize}
+(Remaining part of technique communication is contributed by GenPerm, ApplyPerm, Mult, Equality as the MPC primitives over n-length 1 bit vectors. Since most of the communication is taken by Conversion of DB from unsorted to grouped order, we explore that.)
+
+
+\section{Our Explorations}
+\underline{Problem Statement}: Consider a secret shared database containing 1 continuous attribute $A_0$, m discrete attributes $A_1 ... A_m$ and n rows. We consider a 3 party setup, tolerating 1 corruption. Let query be public to parties. We consider a query of the form: \textbf{$X(A_0)$ GROUP BY $A_i$}. We sort by continuous attribute $A_0$. We group by discrete attributes $A_1 ... A_m$.
+
+\subsection{Hamada\textsubscript{Naive} (Transform A\textsubscript{0}, A\textsubscript{i} to grouped order)}
+
+--Pre Query Stage--
+
+\textbullet{} Arithmetic sharing of DB (Replicated Secret Sharing) \\
+Let l: bit length of $A_0$ value
+Let $A_i$ values span 0, ... , (k-1)
+
+Communication: $O(nl + mn\log n)$ bits where $nl$ corresponds to $A_0$ values secret shared over l bit ring and $mn\log n$ corresponds to $A_i$ values secret shared over $\log n$ bit ring. \\
+
+\textbullet{} Bit decomposition \\
+Communication: $O(nl + mn\log k)$ bits where $nl$ corresponds to sharing of $nl$ $A_0$ bits over $Z_2$ and $mn\log k$ corresponds to sharing of $mn\log k$ $A_i$ bits over $Z_2$. \\
+
+\textbullet{} Modulus Conversion \\
+Communication: $O((nl + mn\log k)\log n)$ bits since we share all the bits from bit decomposition over $\log n$ bit ring.\\
+
+--Query Stage--
+
+\textbullet{} $\pi_{A_i,A_0}$ = GenPerm($A_i$, $A_0$)
+$\pi_{A_i,A_0}$ is secret shared over $\log n$ bit ring. \\
+
+Sorting key: $l + \log k$ bits \\
+Communication:  $O(n(l + \log k)\log n)$ bits \\
+
+\textbullet{} ApplyPerm($\pi_{A_i,A_0}$, $A_0$) \\
+Communication: $8nl$ bits \\
+
+\textbullet{} ApplyPerm($\pi_{A_i,A_0}$, $A_i$) \\
+Communication: $8n\log n$ bits \\
+
+Total communication for q queries =  $O((nl + mn\log k)\log n) + O(qn(l + \log k)\log n)$ bits
+
+\subsection{Hamada\textsuperscript{*} (Transform A\textsubscript{0}, A\textsubscript{i} to grouped order)}
+
+--Pre Query Stage--
+
+\textbullet{} Arithmetic sharing of DB (Replicated Secret Sharing) \\
+
+Communication: $O(nl + mn\log n)$ bits 
+
+\textbullet{} Bit decomposition and Modulus Conversion\\
+
+Communication: $O((nl + mn\log k)\log n)$ bits 
+
+\textbullet{} $\pi_{A_0}$ = GenPerm($A_0$)
+
+Communication:  $O(nl\log n)$ bits \\
+
+\textbullet{} ApplyPerm($\pi_{A_0}$, $A_i$) for all i $\in [1, ..., m]$ \\
+Communication: $8mn\log n$ bits \\
+
+--Query stage--
+
+\textbullet{} $\pi_{A_i,A_0}$ = GenPerm($A_i$) \\
+Communication: $n\log k\log n$ bits \\
+
+
+\textbullet{} ApplyPerm($\pi_{A_i,A_0}$, $A_0$) \\
+Communication: $8nl$ bits \\
+
+\textbullet{} ApplyPerm($\pi_{A_i,A_0}$, $A_i$) \\
+Communication: $8n\log n$ bits \\
+
+Total communication for q queries =  $O((nl + mn\log k)\log n) + O(qn(l + \log k\log n))$ bits
+
+
+\subsection{Solution with One Hot Encoding (Transform A\textsubscript{0}, A\textsubscript{i} to grouped order)}
+
+--Pre Query Stage--
+
+\textbullet{} Arithmetic sharing of $A_0$ and one hot vectors of $A_i$ (Replicated Secret Sharing) \\
+
+Communication: $O(nl + mnk\log n)$ bits 
+
+\textbullet{} $\pi_{A_0}$ = GenPerm($A_0$) \\
+
+Communication: $O(nl \log n)$ bits 
+
+\textbullet{} ApplyPerm($\pi_{A_0}$, $A_i$) for all i $\in [1, ..., m]$ \\
+Communication: $8mnk\log n$ bits \\
+
+--Query stage--
+
+\textbullet{} $\pi_{A_i,A_0}$ = GenPerm($A_i$) \\
+
+Let $\overline{a}$ = (2, 1, 0, 1, 2) and $\overline{b}$ = (0, 1, 1, 2, 2)
+
+We find a permutation $\pi$ s.t. $\overline{b}$ = ApplyPerm($\pi$, $\overline{a}$)
+
+Let our n x m one hot matrix corresponding to $\overline{a}$ be ((0, 0, 1), (0, 1, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1))
+
+Let $\overline{f}$ = $\sum_{i=0}^{n-1} \overline{e_a[i]}$ i.e. (1, 2, 2)
+
+Let $f_{agg}[0] = 0$ and $f_{agg}[j] = f_{agg}[j-1] + f[j-1]$ for $j \in [1, k-1]$ i.e. (0, 1, 3)
+
+Let $cumf[0] = (0, 0, 0)$ and $cumf[j] = cumf[j-1] + e_a[j-1]$ for $j \in [1, k-1]$ \\
+
+for i = 0 to n-1
+
+\{
+
+startPos[i] = $< e_a[i].f_{agg} >$
+
+incrementPos[i] = $< e_a[i].cumf >$
+
+$\pi [i]$ = startPos[i] + incrementPos[i]
+
+\} \\
+
+Communication: $n\log n$ bits \\
+
+
+\textbullet{} ApplyPerm($\pi_{A_i,A_0}$, $A_0$) \\
+Communication: $8nl$ bits \\
+
+\textbullet{} ApplyPerm($\pi_{A_i,A_0}$, $A_i$) \\
+Communication: $8n\log n$ bits \\
+
+Total communication for q queries =  $O((nl + mnk)\log n) + O(qnl)$ bits \\
+
+If we use DPFs instead of One Hot Vector,
+
+Total communication for q queries =  $O((nl + mn\lambda \log k)\log n) + O(qnl)$ bits
+% Bibliography
+%-----------------------------------------------------------------
+\begin{thebibliography}{99}
+
+\bibitem{HamCCS23} Gilad Asharov and Koki Hamada and Dai Ikarashi and Ryo Kikuchi and Ariel Nof and Benny Pinkas and Junichi Tomida \emph{Secure Statistical Analysis on Multiple Datasets: Join and Group-By}, {CCS} (2023)
+
+\end{thebibliography}
+
+%\end{document}

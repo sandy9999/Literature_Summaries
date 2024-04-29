@@ -22,9 +22,17 @@
 \setcounter{section}{0} % Restart section numbering
 
 \section{Summary}
-\underline{Heavy Hitters Problem}: Millions of clients with each client holding an n-bit string. 2 data collection servers that learn the set of strings >=t clients hold.
+\subsection{Problem Statement}
 
-\underline{Applications}:
+\underline{Subset Histogram}: Servers hold a set $S \subseteq \{0, 1\}^n$ of strings. For each string $\sigma \in S$, the servers want to learn the no. of clients who hold the string $\sigma$. In some applications, both clients and servers know set $S$. In others, servers choose $S$ and may keep it secret. \\
+
+\noindent \underline{Heavy Hitters Problem}: Let $C$ denote the no. of clients and consider that each client holds an n-bit string. For an integer $t \in \mathcal{N}$, we say that string $\sigma$ appears in the list $(\alpha_1, ..., \alpha_C)$ more than $t$ times.\\
+
+\noindent \underline{Setting}: Clients communicate with 2 non-colluding data collection servers. \\
+
+\noindent \underline{Security setting}: Correctness protected against any no. of malicious clients. Client privacy protected as long as 1 of the 2 servers is honest (the other may devicate arbitrarily from protocol and may collude with an unbounded no. of clients). \\
+
+\noindent \underline{Applications}:
 \begin{enumerate}
    \item Which URLs crash Firefox most often? 
    \item Which phone apps consume the most battery life?
@@ -33,7 +41,21 @@
    \item Where do users of my app spend their time?
 \end{enumerate}
 
-\section{Warm Up Scheme}
+\subsection{Warm Up Scheme for Private Subset Histograms}
+\begin{enumerate}
+    \item Each client $i$ uses DPFs to create a secret sharing of a vector of dimension $2^n$. This vector is 0 everywhere except that it has $1$ at the position indexed by client i's input string $\alpha_i \in \{0, 1\}^n$.
+    \item To learn how many clients hold a particular string $\sigma$, the servers can compute, for each client $i$, shares of the $\sigma$-th value in the $i$-th client's secret shared vector.
+    \item By publishing sum of these shares, servers learn exactly how many clients hold string $\sigma$.
+\end{enumerate}
+
+$val_{j0} + val_{j1} = \sum_{i=1}^C Eval(k_{i0}, \sigma_j) +  \sum_{i=1}^C Eval(k_{i1}, \sigma_j)$ \\
+$= \sum_{i=1}^C (Eval(k_{i0}, \sigma_j) +  Eval(k_{i1}, \sigma_j)) = \sum_{i=1}^C 1\{\alpha_i = \alpha_j\}$ which is exactly the no. of clients who hold string $\sigma_j$. \\
+
+As long as 1 of the 2 servers is honest, a fully malicious adversary controlling the other server and any no. of clients learns nothing about the honest clients' inputs, apart form what the subset histogram itself leaks. But how to protect against malicious clients? For this, we use malicious secure sketching.
+
+
+
+\section{Warm Up Scheme for Heavy Hitters}
 \begin{enumerate}
     \item Client i with string $s_i$ prepares a binary tree with 1s on the path to $s_i$-th leaf of the tree.
     \item Each client secret shares labels on the tree's nodes and sends one share to each of the servers. 
@@ -47,7 +69,7 @@
 \end{enumerate}
 
 \subsection{How can the clients materialize an exponentially large tree?}
-They can use Incremental Distributed Point Functions (IDPFs): Succint sharing of a tree with non-zero path.
+They can use Incremental Distributed Point Functions (IDPFs): Succinct sharing of a tree with non-zero path.
 
 \underline{Communication}: $O(\lambda n)$ instead of $O (\lambda n^2)$ (with normal DPFs)
 

@@ -8,6 +8,10 @@
     paperwidth=8.5in
 ]{geometry}
 
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage[dvipsnames]{xcolor}
+
 % Define custom command for title formatting and content
 \newcommand{\mytitle}[1]{%
     \begingroup
@@ -22,18 +26,24 @@
 }
 
 \begin{document}
-\input{Secure_Window_Query/TVA.tex}
-\input{Secure_Window_Query/Waldo.tex}
-\input{Secure_Window_Query/Splinter.tex}
-\input{Secure_Window_Query/Dory.tex}
-\input{Group_By_Aggregation/GroupByHamada.tex}
-\input{Group_By_Aggregation/Interoperable_Private_Attribution.tex}
-\input{Oblivious_Structures/PRAC.tex}
-\input{Oblivious_Structures/EfficientArithmeticGC.tex}
-\input{Edit_Distance/MPCBasic.tex}
-\input{Edit_Distance/AsharovApproxEditDistance.tex}
-\input{Edit_Distance/IdeaProposal.tex}
+\input{Private_Attribution/Interoperable_Private_Attribution.tex}
+\input{Private_Attribution/Delegated_Private_Matching_for_Compute.tex}
+\input{Private_Attribution/PAM.tex}
+\input{Private_Attribution/DP_Google_PETS24.tex}
+%\input{Secure_Window_Query/TVA.tex}
+%\input{Secure_Window_Query/Waldo.tex}
+%\input{Secure_Window_Query/Splinter.tex}
+%\input{Secure_Window_Query/Dory.tex}
+%\input{Group_By_Aggregation/GroupByHamada.tex}
+\input{Group_By_Aggregation/Prio.tex}
+\input{Group_By_Aggregation/Prio_Plus.tex}
+%\input{Oblivious_Structures/PRAC.tex}
+%\input{Oblivious_Structures/EfficientArithmeticGC.tex}
+%\input{Edit_Distance/MPCBasic.tex}
+%\input{Edit_Distance/AsharovApproxEditDistance.tex}
+%\input{Edit_Distance/IdeaProposal.tex}
 \input{Heavy_Hitters/Poplar.tex}
-\input{Heavy_Hitters/Mastic.tex}
-\input{Heavy_Hitters/Logstar.tex}
+%\input{Heavy_Hitters/Mastic.tex}
+%\input{Heavy_Hitters/Logstar.tex}
+%\input{Heavy_Hitters/OstrovskyLinearMerge.tex}
 \end{document}
