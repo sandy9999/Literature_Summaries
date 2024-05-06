@@ -1,0 +1,150 @@
+%\documentclass{article}
+%\usepackage[
+%    left=1.2in,
+%    right=1.2in,
+%    top=0.4in,
+%    bottom=0.7in,
+%    paperheight=11in,
+%    paperwidth=8.5in
+%]{geometry}
+
+%\usepackage{layout}
+\clearpage
+\mytitle{PAM \large \\Paper Summary}
+%\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+%\author{Sandhya Saravanan\\
+%  \small MSR, India\\\\
+%}
+%\date{\vspace{-5ex}}
+
+%\begin{document}
+%\maketitle
+\setcounter{section}{0} % Restart section numbering
+
+\section{Context Setting}
+\subsection{Terms}
+\underline{Ad impression}: Action - Ad interaction such as a view/click by user on publisher website \\
+
+\underline{Ad conversion}: Action - Purchase/Newletter signup by user on advertiser website \\
+
+\subsection{Schema}
+Consider a Publisher that owns the Ad Impressions Database whose schema is as follows:
+\begin{enumerate}
+    \item I\_Timestamp
+    \item I\_PublisherID
+    \item I\_AdvertiserID
+    \item I\_UserID
+    \item I\_Metadata (Click/View, Ad size)
+\end{enumerate}
+
+Consider an Advertiser that owns the Ad Conversions Database whose schema is as follows:
+\begin{enumerate}
+    \item C\_Timestamp
+    \item C\_AdvertiserID
+    \item C\_UserID
+    \item C\_Metadata (Sign up/Purchase, Purchase value)
+\end{enumerate}
+
+\subsection{Supported Functionality}
+\begin{enumerate}
+    \item Attribution: Assign an ad conversion to one or more impressions based on a fixed attribution rule. E.g. Last Touch Attribution (LTA), First Touch Attribution (FTA), Uniform Attribution, Time Decay Attribution
+    \item Queries on Resulting Attributed Dataset 
+\end{enumerate}
+
+\section{Summary}
+
+
+\subsection{Supported Functionality}
+\begin{enumerate}
+    \item Any but as an example, Last Touch Attribution: Assigns an ad conversion to an ad impression with the closest preceding timestamp and same User ID 
+    \item SUM (conversion value from conversion metadata) GROUP BY (campaign from impression metadata)
+\end{enumerate}
+
+\begin{table}
+        \centering
+        \begin{tabularx}{\textwidth}{ |X|X|X| }
+                \hline
+                \textbf{Comparison point} & \textbf{IPA} & \textbf{PAM} \\ \hline
+                \textbf{Attribution} & Server-side  & On-Device \\ \hline
+                \textbf{Communication cost (e.g. measured via no. of bits sent by helper servers)} & High (Attribution logic performed using SMPC) & Low (Addition doesn't require communication between Prio nodes during computation)  \\ \hline
+        \end{tabularx}
+\end{table}
+
+\subsection{Schema}
+
+(To revise) \\
+
+\textbf{Ad impression}: 
+\begin{enumerate}
+    \item Timestamp
+    \item AdID (Aggregation Category) 
+    \item MaxAttributions (Max no. of times the ad impression can be attributed)
+    \item Metadata
+    \begin{itemize}
+        \item NoOfAttributionsSoFar (No. of times the ad impression has been attributed so far)
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Ad conversion}:
+\begin{enumerate}
+    \item Timestamp
+    \item ConversionID
+    \item ConversionValue
+    \item AllowedAdIDs (List of all AdIDs that might have contributed to this conversion)
+    \item AdIDBinMapping (Mapping from each ad ID to a bin in a histogram that ultimately reports the attributed value for that bin. In simplest model, each ad ID has its own bin, so the bin would contain the value attributed to a particular impression.)
+    \item Attribution Logic (First click, Last click, Weighted) 
+    \item Metadata
+    \begin{itemize}
+        \item AdIDAttributionMapping (Mapping of Ad ID to a fraction (of the attribution))  
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Technique (as provided in paper)}
+
+\textbf{Joining Impressions and Conversions (On Device i.e. User has Access)}
+\begin{enumerate}
+   \item For each conversion ID
+    \begin{itemize}
+        \item Select all Ad impressions whose AdID is in AllowedAdIDs. If a NoOfAttributionsSoFar for a particular impression = MaxAttributions, i.e. it has been used for attribution its maximum no. of allowed references, don't include it.
+        \item Using attribution logic of conversion, calculate a fraction of attribution per ad ID i.e. AdIDAttributionMapping
+    \end{itemize}
+   \item Create a payload histogram by: 
+    \begin{itemize}
+        \item Creating a histogram with no. of bins (specified in ConversionID). Each bin is filled with corresponding fraction of the conversion value specified by the conversion logic (Having AdIDAttributionMapping and AdIDBinMapping should give us BinAttributionMapping). Bins that contain multiple ad IDs would contain sum of attribution per ad ID i.e. (Conversion value * Fraction of Attribution). Any remaining unattributed credit goes to default bin.
+        \item (Optional) Append to this histogram no. of bins (specified in conversion ID), fill each with corresponding fraction of the conversion value squared. This is to calculate variance of conversion value per bin.
+    \end{itemize}
+    \item For each AdID considered,
+    \begin{itemize}
+        \item Increment no. of times associated impression has been queried i.e. NoOfAttributionsSoFar
+        \item Store payload keyed by ConversionID (??)
+        \item Store results on device so that log of all results are made available to the user for transparency reasons. (The histogram?)
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Reporting to PRIO Aggregators}
+\begin{enumerate}
+    \item From the "payload keyed by ConversionID", obtain shares identified by ConversionID (??)
+    \item Every device contributes cryptographic shares identified by ConversionID to PRIO Aggregation System.
+    \item Aggregation done by ConversionID so that every ConversionID is summed across all users who have converted this way (??)\textcolor{blue}{This would mean ConversionID is in the clear even in final histogram output.}
+    \item DP Noise for a particular conversion is determined by max no. of times any AdID might be used for this conversion.    \item Browser manages per-user budget for a particular query, PRIO aggregation manages per-ConversionID aggregate addition of DP noise.
+\end{enumerate}
+
+\subsection{Limitations}
+No. of AdIDs and ConversionIDs considered in PAM can be unbounded. However, above technique supports finite, small no. of AdIDs associated with each ConversionID. Possible ways to support larger no. of AdIDs per conversion:
+\begin{enumerate}
+    \item Probabilistic Data Structures
+    \item Bloom Filter
+    \item Count-min Sketch
+    \item Count Sketch
+\end{enumerate}
+
+Event level reporting not easily supported due to requirement of "AllowedAdIds" that need to specified for each conversion event by AdTech.
+% Bibliography
+%-----------------------------------------------------------------
+%\begin{thebibliography}{99}
+
+%\bibitem{TVA22} Muhammad Faisal, Boston University; Jerry Zhang \emph{TVA: A multi-party computation system for secure and expressive time series analytics}, {USENIX} (2023)
+
+%\end{thebibliography}
+
+%\end{document}

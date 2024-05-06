@@ -1,0 +1,103 @@
+%\documentclass{article}
+%\usepackage[
+%    left=1.2in,
+%    right=1.2in,
+%    top=0.4in,
+%    bottom=0.7in,
+%    paperheight=11in,
+%    paperwidth=8.5in
+%]{geometry}
+
+%\usepackage{layout}
+\clearpage
+\mytitle{Private Analytics via Streaming, Sketching and Silently Verifiable Proofs \large \\Paper Summary}
+%\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+%\author{Sandhya Saravanan\\
+%  \small MSR, India\\\\
+%}
+%\date{\vspace{-5ex}}
+
+%\begin{document}
+%\maketitle
+\setcounter{section}{0} % Restart section numbering
+
+\section{Summary}
+\begin{enumerate}
+    \item Operations covered (Whisper supports any aggregate statistic that can be computed via a verifiable additive encoding of the client's data)
+    \begin{itemize}
+        \item X(A) where X = SUM, MEAN, Variance, STDDEV, Most popular (Approx), Heavy Hitters (Approx), Boolean OR and AND, MIN and MAX (Approx, over small domains), Frequency COUNT, Quality of arbitrary regression model ($R^2$), Least-squares regression
+    \end{itemize}
+    \item Setting
+    \begin{itemize}
+        \item Consider that each client has a private data point
+        \item Clients send a share of their data to each server 
+    \end{itemize}
+    \item Security Setting
+    \begin{itemize}
+        \item Correctness against Malicious Clients: If all servers are honest, then a small set of malicious clients can only affect the aggregate statistic $f$ by misreporting their private data. When $f$ computes heavy hitters, we allow malicious clients to introduce some small additional error in the output with low probability. 
+        \item Privacy: If at least one server is honest, no server or malicious client learns any information about the honest clients' data $x_1, ..., x_n$ except what can be inferred from the aggregate statistic $f(x_1, ..., x_n)$ and the leakage function $\hat{f}(x_1, ..., x_n)$. Output reveals no info about which client submitted which input.
+        \item Construction of silently verifiable proofs shown in random oracle model
+    \end{itemize}
+    \item Small no. of servers (implementation considers 2 servers), Very large no. of clients (order of millions). Same deployment model as PRIO is used, with same privacy property.
+\end{enumerate}
+
+\subsection{Typical Private Aggregation Protocol}
+\begin{enumerate}
+    \item Each user splits its data into cryptographic shares, sends one share to each server.
+    \item Each user also sends the servers a ZK proof attesting that its secret shares are well formed.
+    \item After receiving the data submissions and validity proofs from a large no. of clients, the servers verify each proof, and then aggregate the valid submissions to compute the statistic of interest.
+\end{enumerate}
+
+\subsection{Issues in Prior Works}
+\begin{enumerate}
+    \item Servers much exchange messages to check each client's validity proof, so server-to-server communication cost is linear in the no. of clients.
+    \item When computing heavy hitters, existing MPC based systems require servers to store an amount of secret state that grows linearly with the no. of clients.
+    \item When client submissions arrive in a stream, servers can't begin processing the first client submission until the last submission arives.
+\end{enumerate}
+
+\subsection{How does Whisper solve Issues in Prior works?}
+\begin{enumerate}
+    \item Server-to-server communication and server storage costs sublinear in no. of users. Done using silently verifiable proof system, where verifiers can verify a batch of proofs by exchanging a single field element. This batch verification is possible even when provers are mutually distrusting and when each prover is proving a different statement.
+    \item To avoid needing to store per-client state in our private heavy hitters computation, we use a small-space sketching data structure. For this, we settle for a good approximation of heavy hitters (prob. of success = 0.999), instead of computing exact heavy hitters.
+    \item Whisper computes aggregate stats in a sequence of time epochs: At the end of each epoch, servers publish a set of aggregate stats computed over the data of the clients participating during the just-completed epoch. Even within a batch of inputs corresponding to a single epoch, client's input share is just added to a local accumulator. Also, a client's proof, is added (if proof is valid) or not, to the batch of proofs to be verified (think of it like 1.valid\_proof + 0.invalid\_proof) 
+\end{enumerate}
+
+\subsection{Strawman approach for PRIO and therefore, Whisper}
+
+\underline{Problem}: Consider that every device $i$ holds a value $x_i$ (0 or 1). We want to compute $f(x_1, ..., x_N) = x_1 + ... + x_N$ without learning any user's private value $x_i$. Suppose at least one server is honest and we have 2 (or more) servers. 
+
+\noindent \underline{Approach}
+\begin{enumerate}
+    \item Every device $i$ distributes 3-party secret shares of its value $x_i$ to the 3 servers.
+    \item At the end, each server holds a share of the total sum i.e. $f(x_1, ..., x_N)$
+\end{enumerate}
+
+\noindent \underline{Issues with Approach}: A single malicious client can undetectably corrupt the sum. Typical defenses (NIZKs) are costly.
+
+\section{Technical Contributions}
+\begin{enumerate}
+    \item Silently Verifiable Proofs: Client proves that its encoded submission is well-formed i.e. proves that its shares sum up to 0 or 1.
+    \begin{itemize}
+        \item Consider a prover who wants to prove that its input x lies in some language $\mathcal{L}$.
+        \item Each verifier holds a secret share of the input x
+        \item Say we have a ZK proof system $\pi_{\mathcal{L}}$ on secret shared data for the language $\mathcal{L}$ in which verifiers communicate with each other over a broadcast channel.
+        \item To generate the silent proof, prover locally simulates execution of all parties (prover and verifiers) running the protocol $\pi_{\mathcal{L}}$.
+        \item Prover sends to each verifier: (1) Transcript of all messages that simulated verifiers exchanged via broadcast channel and (2) View of each verifier in the simulated protocol.
+        \item To check proof, silent verifiers only need to check that (a) their transcripts of simulated broadcast channel are identical and (b) their simulated views are correct according to $\pi_\mathcal{L}$.
+        \item Verifiers can locally generate secret shares of a test value that is 0 iff both of these checks pass (with high prob)
+        \item To check a batch of proofs at once, verifiers can publish a random linear combination of each proof's test value and accept if resulting value sums to 0.
+    \end{itemize}
+    \item Small space sketching data strucutres: To compute approx heavy hitters. Can be combined with silently verifiable proofs to guarantee correctness of approximation even in the face of malicious clients.
+\end{enumerate}
+
+\subsection{Handling a malicious client}
+When malicious clients submit invalid proofs, servers' batch verification check fails. To identify the failing proofs with little server-server communication, servers can split the batch into smaller non-overlapping batches of clients, exchange verification tags to find which batches contain defective proofs. For each defective batch, they recursively search for defective clients in parallel. This recursion continues until they are left with defective singleton batches.
+% Bibliography
+%-----------------------------------------------------------------
+%\begin{thebibliography}{99}
+
+%\bibitem{HamCCS23} Gilad Asharov and Koki Hamada and Dai Ikarashi and Ryo Kikuchi and Ariel Nof and Benny Pinkas and Junichi Tomida \emph{Secure Statistical Analysis on Multiple Datasets: Join and Group-By}, {CCS} (2023)
+
+%\end{thebibliography}
+
+%\end{document}

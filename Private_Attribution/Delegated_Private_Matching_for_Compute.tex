@@ -1,0 +1,153 @@
+%\documentclass{article}
+%\usepackage[
+%    left=1.2in,
+%    right=1.2in,
+%    top=0.4in,
+%    bottom=0.7in,
+%    paperheight=11in,
+%    paperwidth=8.5in
+%]{geometry}
+
+%\usepackage{layout}
+\clearpage
+\mytitle{Delegated Private Matching for Compute \large \\Paper Summary}
+%\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+%\author{Sandhya Saravanan\\
+%  \small MSR, India\\\\
+%}
+%\date{\vspace{-5ex}}
+
+%\begin{document}
+%\maketitle
+\setcounter{section}{0} % Restart section numbering
+
+\section{Context Setting}
+\subsection{Terms}
+\underline{Ad impression}: Action - Ad interaction such as a view/click by user on publisher website \\
+
+\underline{Ad conversion}: Action - Purchase/Newletter signup by user on advertiser website \\
+
+\subsection{Schema}
+Consider a Publisher that owns the Ad Impressions Database whose schema is as follows:
+\begin{enumerate}
+    \item I\_Timestamp
+    \item I\_PublisherID
+    \item I\_AdvertiserID
+    \item I\_UserID
+    \item I\_Metadata (Click/View, Ad size)
+\end{enumerate}
+
+Consider an Advertiser that owns the Ad Conversions Database whose schema is as follows:
+\begin{enumerate}
+    \item C\_Timestamp
+    \item C\_AdvertiserID
+    \item C\_UserID
+    \item C\_Metadata (Sign up/Purchase, Purchase value)
+\end{enumerate}
+
+\subsection{Supported Functionality}
+\begin{enumerate}
+    \item Attribution: Assign an ad conversion to one or more impressions based on a fixed attribution rule. E.g. Last Touch Attribution (LTA), First Touch Attribution (FTA), Uniform Attribution, Time Decay Attribution
+    \item Queries on Resulting Attributed Dataset 
+\end{enumerate}
+
+\section{Summary}
+
+
+\subsection{Supported Functionality}
+\begin{enumerate}
+    \item Attribution rule: Assigns an ad conversion to an ad impression whose timestamp is within predefined $\tau$ from conversion timestamp for the same User ID. 
+    \item SUM (conversion metadata) GROUP BY (impression metadata)
+\end{enumerate}
+
+\subsection{Schema}
+Ad impression schema:
+\begin{enumerate}
+    \item UserID
+    \item Timestamp
+    \item Metadata 
+    \begin{itemize}
+        \item Campaign identifier
+    \end{itemize}
+\end{enumerate}
+
+Ad conversion schema:
+\begin{enumerate}
+    \item UserID
+    \item Timestamp
+    \item Metadata 
+    \begin{itemize}
+        \item Amount
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Limitations}
+This paper considers one-to-many relationship between Publisher and Advertiser in the section about Ad attribution. The same techniques could be used for many-to-one relationship between Publisher and Advertiser by just calling the Publisher, the Advertiser and the Advertiser, the Publisher. The techniques could potentially be extended to the many to many scenario as well, by calling all of the publishers together as a single Publisher.
+
+\subsection{Stages}
+\begin{enumerate}
+    \item Compute Left join on User ID between Impressions dataset $D_C$ owned by Publisher Party (C) and Conversions datasets ($D_{P_1}$, ... $D_{P_T}$) owned by Advertiser parties $P_1$, ... , $P_T$. Finally, C and D (Delegated party that computes on the data from $P_1$, ... , $P_T$ without access to them in clear) hold shares of the join table J such that $J_C \oplus J_D = J$ Note that rows of the join are aligned with the rows of $D_C$. Schema of J
+    \begin{itemize}
+        \item Campaign identifier
+        \item Impression Timestamp
+        \item Conversion Timestamp
+        \item Amount
+    \end{itemize}
+    Cryptographic Primitives: Key Encapsulation Mechanism (KEM), Public Key Encryption (Elgamal with ECC in implementation), Symmetric Key Encryption (AES in CBC mode in implementation), Rerandomizable Encrypted OPRF (EO). Capabilities of EO include:
+    \begin{itemize}
+        \item Multiple input providers can encrypt their inputs
+        \item An output receiver can shuffle and rerandomize the ciphertexts
+        \item A server can obliviously evaluate a PRF on encrypted and plaintext identifers
+        \item Output receiver can decrypt the encrypted PRF evaluations
+    \end{itemize}
+    \item Append a flag attribute to the joined data that holds value 1 if attribution rule is satisfied i.e. impression timestamp is within $\tau$ of conversion timestamp.
+    \item Perform other aggregation queries.
+\end{enumerate}
+
+\subsection{Cost of Left Join}
+$m_C$ = No. of rows in $D_C$ \\
+$m_t$ = No. of rows in $D_{P_t}$ \\
+$M$ = $\sum_{t=1}^T m_t$ \\
+$I$ = $D_C \cap (D_{P_1} \bigcup ... \bigcup D_{P_T})$ \\
+
+DPMC (Delegated Private Matching for Compute)
+\begin{center}
+\begin{tabular}{ | c | c | c | c | c | } 
+  \hline
+     & \textbf{C} & \textbf{D} & \textbf{S} & \textbf{$P_t$} \\ 
+  \hline
+  Communication & $O(m_C + M)$ & $O(m_C + M)$ & & $O(m_t)$ \\ 
+  \hline
+  No. of exponentiations & $2m_C + M$ & $m_C + M - I$ & & $2m_t + 1$ \\ 
+  \hline
+\end{tabular}
+\end{center}
+
+D\textsubscript{s}PMC (Delegated Private Matching for Compute with Shuffling)
+\begin{center}
+\begin{tabular}{ | c | c | c | c | c | } 
+  \hline
+     & \textbf{C} & \textbf{D} & \textbf{S} & \textbf{$P_t$} \\ 
+  \hline
+  Communication & $O(m_C + M)$ & $O(m_C + M)$ & $O(M)$ & $O(m_t)$ \\ 
+  \hline
+  No. of exponentiations & $2m_C + 3M$ & $m_C + M - I$ & $4M$ & $2m_t$ \\ 
+  \hline
+\end{tabular}
+\end{center}
+
+\subsection{Claim to Fame}
+\begin{enumerate}
+    \item Private Matching for Compute (PMC) provided a protocol for join between 2 parties' data. Multi-Key Private Matching for Compute provided a protocol for join between 2 parties on non-unique identifiers. E.g. Same users could have same phone number OR same email ID and we join on both these attributes to increase match rates. Delegated Private Matching for Compute (DPMC) supports multi-key private matching for T input parties.
+    \item Users appearing in multiple advertiser datasets are reduced to a single row in the final join (based on some ranking based algorithm), therefore multiple joins are not needed.
+\end{enumerate}
+
+% Bibliography
+%-----------------------------------------------------------------
+%\begin{thebibliography}{99}
+
+%\bibitem{TVA22} Muhammad Faisal, Boston University; Jerry Zhang \emph{TVA: A multi-party computation system for secure and expressive time series analytics}, {USENIX} (2023)
+
+%\end{thebibliography}
+
+%\end{document}

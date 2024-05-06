@@ -91,6 +91,56 @@ For q multi-predicate queries with p predicates per query:\\
 
 \underline{Cost}: $qp(\lambda \ell + 3n \log n)$ bits, 1 round (Check?)
 
+\section{Our Explorations}
+
+Consider $m$ single bit attributes of a database, $A_m$, $A_{m-1}$, ..., $A_1$ (writing it this way as it's easier to visualize each record as an m-bit integer). There are $n$ records. \\
+
+Consider the WHERE predicate: "WHERE $A_m == 1$". \\
+
+That means, we need to find the no. of records that lie in the interval $1...0$ (1 followed by m-1 zeroes) to $1...1$ (m ones). We have $n$ DCF keys, each of size roughly $\lambda m \log n$ bits. We have a single interval. This is a Multiple Interval Containment (MIC) gate scenario. \\
+
+Consider the WHERE predicate: "WHERE $A_{m-2} == 1$". \\
+
+That means, we need to find the no. of records in the following intervals:
+\begin{enumerate}
+    \item $0010..00$ to $0011...1$
+    \item $0110..00$ to $0111...1$
+    \item $1010..00$ to $1011...1$
+    \item $1110..00$ to $1111...1$
+\end{enumerate}
+
+We have $n$ DCF keys, each of size roughly $\lambda m \log n$ bits. We have $2^2$ intervals now ($A_m$ and $A_{m-1}$ can take any value so). This is a Multiple Interval Containment (MIC) gate scenario. \\
+
+Consider the WHERE predicate: "WHERE $A_{m-2} == 1$ AND $A_{m-5} == 1$". \\
+
+That means, we need to find the no. of records in the following intervals:
+\begin{enumerate}
+    \item $0010010..00$ to $001001...1$
+    \item $0010110..00$ to $001011...1$
+    \item $0011010..00$ to $001101...1$
+    \item $0011110..00$ to $001111...1$
+    \item $0110010..00$ to $011001...1$
+    \item $0110110..00$ to $011011...1$
+    \item $0111010..00$ to $011101...1$
+    \item $0111110..00$ to $011111...1$
+    \item $1010010..00$ to $101001...1$
+    \item $1010110..00$ to $101011...1$
+    \item $1011010..00$ to $101101...1$
+    \item $1011110..00$ to $101111...1$
+    \item $1110010..00$ to $111001...1$
+    \item $1110110..00$ to $111011...1$
+    \item $1111010..00$ to $111101...1$
+    \item $1111110..00$ to $111111...1$
+\end{enumerate}
+
+We have $n$ DCF keys, each of size roughly $\lambda m \log n$ bits. We have $2^2 \times 2^2 = 2^4$ intervals now ($A_m$, $A_{m-1}$, $A_{m-3}$, $A_{m-4}$ can take any value so). This is a Multiple Interval Containment (MIC) gate scenario. \\
+
+What we can observe is that if the attributes are ordered in such a way that the GROUP BY attributes are right at the beginning (say we group by $A_m, A_{m-1}, A_{m-2}$), then irrespective of how many attributes we group by, we only have to deal with one interval).\\
+
+The intervals are public (splines concept), so we can stick with using a single DCF key for each record. The no. of invocations of the DCF i.e. the compute will be proportional to the no. of intervals, so we want to optimize that as well.
+
+
+
 % Bibliography
 %-----------------------------------------------------------------
 %\begin{thebibliography}{99}

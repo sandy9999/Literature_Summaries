@@ -22,60 +22,48 @@
 \setcounter{section}{0} % Restart section numbering
 
 \section{Summary}
-Spline (2 rounds, communicates 6 elements) --> Communication independent of no. of intervals
+Spline (2 rounds, communicates 6 elements) $\rightarrow$ Communication independent of no. of intervals
 
-
-\section{Strawman Approach}
-
-\underline{Problem}: Consider that every device $i$ holds a value $x_i$ (0 or 1). We want to compute $f(x_1, ..., x_N) = x_1 + ... + x_N$ without learning any user's private value $x_i$. Suppose at least one server is honest and we have 3 servers. 
-
-\noindent \underline{Approach}
+\subsection{Technical Contributions}
 \begin{enumerate}
-    \item Every device $i$ distributes 3-party secret shares of its value $x_i$ to the 3 servers.
-    \item At the end, each server holds a share of the total sum i.e. $f(x_1, ..., x_N)$
-\end{enumerate}
-
-\noindent \underline{Issues with Approach}: A single malicious client can undetectably corrupt the sum. Typical defenses (NIZKs) are costly.
-
-\section{Technical Contributions}
-\begin{enumerate}
-    \item Secret Shared Non-Interactive Proofs (SNIPs): Client proves that its encoded submission is well-formed i.e. proves that its shares sum up to 0 or 1.
+    \item New Approximation technique for Sigmoid
     \begin{itemize}
-        \item Servers hold shares of client's private value $x$
-        \item Servers hold an arbitrary public predicate Valid(.) expressed as an arithmetic circuit.
-        \item Want to test if Valid(x) holds, without leaking $x$.
-        \item \underline{Cost}: 0 public key operations for both Client and Server, $\theta(M)$ Client to Server Communication, $O(1)$ Server to Server Communication where M = No. of Multiplication gates in Valid(.) circuit. For specific Valid() circuits, it's possible to eliminate the $\theta(M)$ cost for Client to Server communication. (From presentation)
+        \item For input interval [0, 1), we use spline approximation that splits the interval into several pieces, each of which is approximated with a linear function.
+        \item For interval between 1 and a configurable threshold, we use Taylor approximation.
+        \item For large values above threshold, we approximate sigmoid with value 1
+        \item Negative inputs are handled symmetrically.
+        \item Multiple Interval Containment (MIC) gate (from the Eurocrypt paper) is used to identify which interval the input falls into in order to use the approximation function. MIC gate is also used within the spline approximation on the interval [0, 1) to choose the right linear function.
+        \item MIC gate is optimized by introducing a reduction from DCF to IDPF.
     \end{itemize}
-    \item Aggregatable Encodings: Can compute sums privately $\implies$ Can compute f(.) privately (for many f's of interest)
+    \item Secure spline evaluation and secure powers computation protocols for fixed point values
+    \item New constant round comparison protocol
+        \begin{itemize}
+            \item For comparison of $l$-bit nos, total 3 communication rounds while state-of-art SynCirc uses rounds logarithmic in $l$
+        \end{itemize}
+    \item New 2-party protocol to generate keys for DPFs over arithmetic sharing (previous constructions only do this for Boolean outputs)
+        \begin{itemize}
+            \item Doerner Shelat ORAM only handled generating DPF keys for Boolean shared outputs. This work provides a construction to generate DPF keys for arithmetic shared outputs too. This requires a single additional OT in offline phase, independent of size of output shares.
+        \end{itemize}
 \end{enumerate}
 
-\section{Cost}
-Refer Table~\ref{asymptoticcost} (Taken from paper)
+\subsection{Setting}
+2PC. Each party holds a cryptographic share of input data. 
 
-\begin{table}
-	\centering
-	\begin{tabular}{ |r|r|r|r| } 
-		\hline
-		& \textbf{Exps} & \textbf{Muls} & \textbf{Proof Len} \\ \hline
-		Client  & $0$ & $M \log M$ & $M$ \\ \hline
-		& \textbf{Exps/Pairs} & \textbf{Muls} & \textbf{Data Transfer} \\ \hline
-		Server  & $0$ & $M\log M$ & $1$ \\ \hline
-	\end{tabular}
-	\caption{Asymptotic cost for PRIO. Client holds a vector $x \in \mathcal{F}^M$, each server $i$ holds a share $[x]_i$, and the client convinces the servers that each component of x is a $0/1$ value in $\mathcal{F}$}
-        \label{asymptoticcost}
-\end{table}
+\subsection{Secure Spline Computation}
+A spline function $S : \mathbb{R} \rightarrow \mathbb{R}$ on an interval [a, b) is specified as a partition of $m$ intervals $\{a_i, b_i\}_{i \in m}$ with a d-degree polynomial $p_i$ defined for each of the intervals. The value of the function $S$ on input $x \in [a, b]$ is equal to $p_i(x)$ where $a \le x < b$.\\
 
+For the case of Sigmoid, we use degree 1 polynomials on $m$ intervals. Note that such a polynomial $Q(x)$ is of the form $Q(x) = ax + b$ where $a, b$ are publicly known values. Given a secret sharing of x, parties can locally compute a sharing of $Q(x)$. \\
 
-\section{Overview of Technique}
-PRIO computes $f(x_1, ..., x_n)$ privately as follows:
+\underline{Spline protocol}
 \begin{enumerate}
-    \item Each client encodes it data value $x$ using AFE Encode routine for the aggregation function $f$.
-    \item Every client splits its encoding $s$ shares and sends one share to each of $s$ servers.
-    \item Client uses a SNIP proof to convince the servers that its encoding satisfies the AFE Valid predicate.
-    \item Upon receiving a client's submission, the servers verify the SNIP to ensure that the encoding is well formed.
-    \item If the servers conclude that the encoding is valid, every server adds the first $k'$ components of the encoding share to its local running accumulator ($k'$ is a parameter of the AFE scheme).
-    \item Finally, after collecting valid submissions from many clients, every server publishes its local accumulator, enabling anyone to run the AFE Decode routine to compute the final statistic in the clear.
+    \item Let the 2 parties locally evaluate degree 1 polynomials $Q_i$ defined for each of the m intervals.
+    \item Let $\overline{Q}$ represent a length m vector containing the result of evaluating $Q_i$ on $x$ for each of the $m$ intervals.
+    \item Parties use MIC gate to generate shares of a vector $\overline{B} = [b_1, b_2, ..., b_m]$ where $b_i = 1\{p_i \le x < q_i\}$.
+    \item They compute secure dot product of $\overline{Q}$ and $\overline{B}$ to derive actual spline result.
+    \item Total communication: 2 + 4m elements, Online rounds: 2 (1st round for MIC gate evaluation, 2nd round for matrix multiplication)
+    \item This work provides optimized protocol for performing dot product (for splines specifically) which reduces total communication to 6 elements. Note that the online cost is independent of no. of intervals i.e. $m$.
 \end{enumerate}
+
 % Bibliography
 %-----------------------------------------------------------------
 %\begin{thebibliography}{99}
