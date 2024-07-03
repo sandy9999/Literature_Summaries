@@ -51,11 +51,44 @@
 $val_{j0} + val_{j1} = \sum_{i=1}^C Eval(k_{i0}, \sigma_j) +  \sum_{i=1}^C Eval(k_{i1}, \sigma_j)$ \\
 $= \sum_{i=1}^C (Eval(k_{i0}, \sigma_j) +  Eval(k_{i1}, \sigma_j)) = \sum_{i=1}^C 1\{\alpha_i = \alpha_j\}$ which is exactly the no. of clients who hold string $\sigma_j$. \\
 
-As long as 1 of the 2 servers is honest, a fully malicious adversary controlling the other server and any no. of clients learns nothing about the honest clients' inputs, apart form what the subset histogram itself leaks. But how to protect against malicious clients? For this, we use malicious secure sketching.
+As long as 1 of the 2 servers is honest, a fully malicious adversary controlling the other server and any no. of clients learns nothing about the honest clients' inputs, apart from what the subset histogram itself leaks. But how to protect against malicious clients? A single malicious client could send malformed DPF keys that could completely corrupt the subset histogram. For this, we use malicious secure sketching.
 
+\subsection{Malicious Secure Sketching}
+\underline{Goal}: Before the servers accept the pair of DPF keys from the client, servers check they are well formed i.e. the 2 servers check if the DPF keys submitted by each client expand to shares of a vector that is 0 everywhere and 1 at a single position. 
 
+\underline{Scheme}: Modification of Verifiable FSS sketching scheme (with security against semi-honest servers) + Malicious server security. For this, clients encode their vector using a redundant, authenticated randomized encoding s.t. if either server tampers with the client's vector, the honest servers will reject the vector with overwhelming probability.
 
-\section{Warm Up Scheme for Heavy Hitters}
+\subsubsection{Steps of Scheme}
+\begin{enumerate}
+    \item Encoding
+    \begin{itemize}
+        \item Every client chooses a random value $k \rightarrow^\$ \mathbb{F}$
+        \item Client encodes vector $\overline{v} \in \mathbb{F}^m$ (Note: m-length input vector) as $(\overline{v}, k\overline{v})$
+        \item Only a single DPF instance with a longer payload (why?) is needed to represent this.
+        \item Client sends additive shares of $(\overline{v}, k\overline{v})$ to the 2 servers.
+        \item Clients also provides servers with some correlated randomness which servers can use for 2PC.
+    \end{itemize}
+    \item Sketching
+    \begin{itemize}
+        \item Servers receive from client shares of $(\overline{v}, \overline{v}^*)$. If the client is honest, $\overline{v}^* = k\overline{v}$
+        \item Servers then jointly sample a uniform random vector $\overline{r} = (r_1, ..., r_m) \in \mathbb{F}^m$ and compute $\overline{r}^* = (r_1^2, ..., r_m^2) \in \mathbb{F}^m$
+        \item Servers compute inner product of above sketch vectors with both clients' data vector $\overline{v}$ and their shares of encoded vector $\overline{v}^*$ i.e. for $b \in \{0, 1\}$, server b computes $z_b \leftarrow \langle \overline{r}, \overline{v}_b \rangle \in \mathbb{F}$, $z_b^* \leftarrow \langle \overline{r}^*, \overline{v}_b \rangle \in \mathbb{F}$, $z_b^{**} \leftarrow \langle \overline{r}, \overline{v}_b^* \rangle \in \mathbb{F}$
+    \end{itemize}
+    \item Decision
+    \begin{itemize}
+        \item Servers use secure computation to evaluate: $(z^2 - z^*) + (k.z - z^{**}) \in \mathbb{F}$ and check that the output is $0$. 
+        \item Suppose the client provides additive secret shares of random offsets $a, b, c$. Writing $Z \leftarrow (z+a)$ ,$Z^* \leftarrow z^* + b$, $Z^{**} \leftarrow (z^{**} + c)$. Then the expression to be computed becomes: $[(Z-a)^2 + (Z^* - b)] + [k.(Z-a) - (Z^{**} - c)] = Z^2 + Z^* - Z^{**} + Z[-2a+k] + [a^2 + b - ak + c]$.
+        \item Clients will give additive secret shares of $A = [-2a + k]$ and $B = [a^2 + b - ak + c]$. 
+    \end{itemize}
+\end{enumerate}
+
+Shortcomings of prior sketching techniques:
+\begin{enumerate}
+    \item No protection against malicious servers (Check FSS Extensions paper). Techniques that do protect against malicious servers either have client-server communication that grows linearly in the length of the vector being checked (PRIO), require extra rounds of interaction between server and client, or require extra non-colluding servers. (Why?)
+    \item Weak protection against malicious clients: Suppose the servers' set consists of a single string $\sigma$ that is unknown to clients. An honest client will submit a pair of DPF keys that expand to shares of a vector that contains 1 at a single coordinate. A malicious client can submit a pair of DPF keys that expand to shares of a vector that is 1 at every coordinate. Even if servers check that their keys expand to shares of a vector of weight $1$ in the singleton set S, servers won't detect this attack. (Why?)
+\end{enumerate}
+
+\subsection{Warm Up Scheme for Heavy Hitters}
 \begin{enumerate}
     \item Client i with string $s_i$ prepares a binary tree with 1s on the path to $s_i$-th leaf of the tree.
     \item Each client secret shares labels on the tree's nodes and sends one share to each of the servers. 

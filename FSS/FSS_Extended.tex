@@ -10,7 +10,7 @@
 
 %\usepackage{layout}
 \clearpage
-\mytitle{Function Secret Sharing \large \\Paper Summary}
+\mytitle{Function Secret Sharing: Improvements and Extensions \large \\Paper Summary}
 %\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
 %\author{Sandhya Saravanan\\
 %  \small MSR, India\\\\
@@ -24,16 +24,11 @@
 \section{Summary}
 Main Results
 \begin{enumerate}
-    \item Improved DPF
-    \begin{itemize}
-        \item Improved 2-party DPF construction from a PRG, reducing the length of the key describing each $f_i$, from $O(\lambda n^(\log_2 3)$ to $O(\lambda n)$
-        \item First non-trivial construction of a p-party DPF for $p \ge 3$, obtaining near-quadratic improvement over a naive construction that additively shares truth table of $f$. Can be based on any PRG.
-        \item PRG-based FSS constructions for natural function classes that extend point functions, including interval functions and partial matching functions.
-        \item Construction of general FSS via obfuscation
-        \item Indication for implausibility of constructing general FSS from weak cryptographic assumptions such as existence of OWF
-        \item A completeness result
-        \item Relation with PRFs
-    \end{itemize}
+    \item Simplified FSS construction: Introduction of \underline{tensoring} operation for FSS 
+    \item Improved 2-party DPF: Reduce key size of PRG based DPF scheme by roughly 4x and optimize computational cost.
+    \item FSS for New Function Families: Family of Decision Trees (Leaks only topology of tree and internal node labels) which can be used for FSS for Multi-Dimensional Intervals
+    \item General technique for extending FSS schemes by increasing no. of parties
+    \item Verifiable FSS: Efficient protocols for verifying that keys $(k_1^*, k_2^*, ..., k_m^*)$, obtained from a potentially malicious user, are consistent with some $f \in \mathcal{F}$.
 \end{enumerate}
 
 \subsection{Motivating Question}

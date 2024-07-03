@@ -50,7 +50,7 @@
 
 \subsection{Issues in Prior Works}
 \begin{enumerate}
-    \item Servers much exchange messages to check each client's validity proof, so server-to-server communication cost is linear in the no. of clients.
+    \item Servers must exchange messages to check each client's validity proof, so server-to-server communication cost is linear in the no. of clients.
     \item When computing heavy hitters, existing MPC based systems require servers to store an amount of secret state that grows linearly with the no. of clients.
     \item When client submissions arrive in a stream, servers can't begin processing the first client submission until the last submission arives.
 \end{enumerate}
@@ -92,6 +92,35 @@
 
 \subsection{Handling a malicious client}
 When malicious clients submit invalid proofs, servers' batch verification check fails. To identify the failing proofs with little server-server communication, servers can split the batch into smaller non-overlapping batches of clients, exchange verification tags to find which batches contain defective proofs. For each defective batch, they recursively search for defective clients in parallel. This recursion continues until they are left with defective singleton batches.
+
+
+\section{Technical Background}
+\subsection{Zero Knowledge on Distributed Data}
+\begin{enumerate}
+    \item $Gen(x_1, ..., x_v) \rightarrow (\pi_1, ..., \pi_v, \pi^{pub})$
+    \begin{itemize}
+        \item Input: $\eta$-length vector $x_i$ for $i \in [v]$ where v is the no. of verifiers.
+        \item Output: $v$ private proofs $\pi_i$ and 1 public proof $\pi^{pub}$
+    \end{itemize}
+    \item $Eval(x_i, \pi_i, \pi^{pub}; r) \rightarrow vtag_i \in \mathbb{F}^q$
+    \begin{itemize}
+        \item Input: i-th verifier input $x_i$, private proof $\pi_i$, public proof $\pi^{pub}$, random rape r.
+        \item Output: Proof tag $vtag_i$ of size $q$.
+    \end{itemize}
+    \item $Ver(vtag_1, ..., vtag_v) \in \mathbb{F}$ 
+    \begin{itemize}
+        \item Input: $v$ verification tags 
+        \item Output: $0 \in \mathbb{F}$ indicates acceptance.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Silent Verification}
+A proof system is silently verifiable if the verification predicate Ver computes a linear function (over field $\mathbb{F}$) of the verification tags it takes as input. The tag size $q$ is 1 and Ver checks that the (scaled) verification tags sum to 0. \\
+
+Instead of broadcasting the verification tags for each proof separately, verifiers can agree on a shared random test vector $t \in \mathbb{F}^B$. Each verifier $i$ publishes the inner product of their $B$ verification tags (as a vector in $\mathbb{F}^B$) with the shared random vector $t$. If any set of verification tags in the batch sums to a non-zero value, then the combined verification tag will be non-zero with probability at least $1 - 1/|\mathbb{F}|$.
+
+\subsection{Constructing Silently Verifiable Proofs}
+\underline{Strategy}: Start with a conventional ZK proof system on secret shared data that is not silent i.e. the verification predicate may compute a non-linear function. Then we show how to convert any non-silent proof into a silent one in the random oracle model.
 % Bibliography
 %-----------------------------------------------------------------
 %\begin{thebibliography}{99}
