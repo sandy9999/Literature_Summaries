@@ -1,0 +1,210 @@
+%\documentclass{article}
+%\usepackage[
+%    left=1.2in,
+%    right=1.2in,
+%    top=0.4in,
+%    bottom=0.7in,
+%    paperheight=11in,
+%    paperwidth=8.5in
+%]{geometry}
+
+%\usepackage{layout}
+\clearpage
+\mytitle{My Explorations with Secure Filtering and Secure Aggregation}
+%\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+%\author{Sandhya Saravanan\\
+%  \small MSR, India\\\\
+%}
+%\date{\vspace{-5ex}}
+
+%\begin{document}
+%\maketitle
+\setcounter{section}{0} % Restart section numbering
+
+\section{Setting}
+\begin{enumerate}
+    \item Consider a data owner D, that owns a database consisting of only one attribute, A. Attribute values range from 0 to (a-1). D arithmetic secret shares this database between 2 servers, $S_1$ and $S_2$. We need at minimum, a $\log a$ bit ring to secret share the database values over.
+    \item Consider the following query: COUNT() WHERE $A == 3$ made by a client(s), where the query is public (visible to servers and D too).
+\end{enumerate}
+
+\subsection{Protocol 1 (Note this works even if predicate value i.e. 3 is private)}
+\begin{enumerate}
+    \item Offline Phase
+    \begin{itemize}
+        \item D distributes shares to $S_1$ and $S_2$ (Communication: $N\log a$ bits) (assuming D had the database in clear initially)
+    \end{itemize}
+    \item Online Phase
+    \item Per Query
+    \begin{itemize}
+        \item $S_1$ and $S_2$ check for each row whether the A-value is equal (secure equality) to 3 (Communication: $Nc_{eq}$ bits)
+    \end{itemize}
+    \item For $q$ queries,
+    \begin{itemize}
+        \item Repeat above for $q$ queries. (Communication: $qNc_{eq}$ bits)
+    \end{itemize}
+    \item Total Communication for $q$ queries: $N\log a + q(Nc_{eq} + c_{reveal})$ bits  
+\end{enumerate}
+
+\subsection{Protocol 2 (Dependent on predicate value i.e. 3 being public)}
+\begin{enumerate}
+    \item Offline Phase
+    \begin{itemize}
+        \item D distributes shares to $S_1$ and $S_2$ (Communication: $N\log a$ bits) (assuming D had the database in clear initially
+)
+        \item $S_1$ and $S_2$ check for each row whether the A-value is equal (secure equality) to $i$ for $i$ going from 0 to (a-1) (Communication: $Nac_{eq}$ bits). With this, we have an a-element vector with each element $i$ representing the count of $i$.
+    \end{itemize}
+    \item Online Phase
+    \item Per Query
+    \begin{itemize}
+        \item We just access the 3rd element (predicate value-th element) from the a-element vector and reveal it. (Communication: $c_{reveal}$ bits) 
+    \end{itemize}
+    \item For $q$ queries,
+    \begin{itemize}
+        \item Repeat above for $q$ queries. (Communication: $c_{reveal}$ bits)
+    \end{itemize}
+    \item Total Communication for $q$ queries: $N\log a + Nac_{eq} + qc_{reveal}$ bits  
+\end{enumerate}
+
+\subsection{Protocol 3 (Protocol 2 but with predicate value i.e. 3 being private)}
+\begin{enumerate}
+    \item Offline Phase
+    \begin{itemize}
+        \item D distributes shares to $S_1$ and $S_2$ (Communication: $N\log a$ bits) (assuming D had the database in clear initially
+)
+        \item $S_1$ and $S_2$ check for each row whether the A-value is equal (secure equality) to $i$ for $i$ going from 0 to (a-1) (Communication: $Nac_{eq}$ bits). With this, we have an a-element vector with each element $i$ representing the count of $i$.
+    \end{itemize}
+    \item Online Phase
+    \item Per Query
+    \begin{itemize}
+        \item Insert ORAM protocol to access secret shared predicate value-th element? (Communication: COST) 
+    \end{itemize}
+    \item For $q$ queries,
+    \begin{itemize}
+        \item Repeat above for $q$ queries. (Communication: q*COST )
+    \end{itemize}
+    \item Total Communication for $q$ queries: $N\log a + Nac_{eq} + q*COST$ bits  
+\end{enumerate}
+
+\subsection{Protocol 4 (Dependent on predicate value i.e. 3 being public)}
+\begin{enumerate}
+    \item Offline Phase
+    \begin{itemize}
+        \item Since D has access to the database in clear, D can form the a-element frequency vector and distribute shares to $S_1$ and $S_2$ (Communication: $a\log N$ bits)
+    \end{itemize}
+    \item Online Phase
+    \item Per Query
+    \begin{itemize}
+        \item We just access the 3rd element (predicate value-th element) from the a-element vector and reveal it. (Communication: $c_{reveal}$ bits) 
+    \end{itemize}
+    \item For $q$ queries,
+    \begin{itemize}
+        \item Repeat above for $q$ queries. (Communication: $c_{reveal}$ bits)
+    \end{itemize}
+    \item Total Communication for $q$ queries: $a\log N + qc_{reveal}$ bits  
+\end{enumerate}
+
+\subsection{Protocol 5 (Dependent on predicate value i.e. 3 being public)}
+\begin{enumerate}
+    \item Offline Phase
+    \begin{itemize}
+        \item D sends $N$ pairs of DPF keys (think of each key corresponding to a database value v, representing a compressed a-element $e_v$) to $S_1$ and $S_2$ (Communication: $N\lambda\log a$ bits)
+    \end{itemize}
+    \item Online Phase
+    \item Per Query
+    \begin{itemize}
+        \item Evaluate all the $N$ DPF keys on the predicate value and add the results, reveal. (Communication: $c_{reveal}$)
+    \end{itemize}
+    \item For $q$ queries,
+    \begin{itemize}
+        \item Repeat above for $q$ queries. (Communication: $qc_{reveal}$ bits)
+    \end{itemize}
+    \item Total Communication for $q$ queries: $N\lambda\log a + qc_{reveal}$ bits  
+\end{enumerate}
+
+\subsection{Protocol 6 (Protocol 5 with predicate value i.e. 3 being private)}
+\begin{enumerate}
+    \item Offline Phase
+    \begin{itemize}
+        \item D sends $N$ pairs of DPF keys (think of each key corresponding to a database value v, representing a compressed a-element $e_v$) to $S_1$ and $S_2$ (Communication: $N\lambda\log a$ bits)
+    \end{itemize}
+    \item Online Phase
+    \item Per Query
+    \begin{itemize}
+        \item Evaluate all the $N$ DPF keys on the secret shared predicate value (FSS gate?) and add the results, reveal. (Communication: ??)
+    \end{itemize}
+    \item For $q$ queries,
+    \begin{itemize}
+        \item Repeat above for $q$ queries. (Communication: q?? bits)
+    \end{itemize}
+    \item Total Communication for $q$ queries: $N\lambda\log a + qc_{reveal}$ bits  
+\end{enumerate}
+
+\subsection{Protocol 7 (Predicate value can be public or private)}
+\begin{enumerate}
+    \item Online Phase
+    \item Per Query
+    \begin{itemize}
+        \item D sends $N$ masks for every time we evaluate the DPF (Communication: $N\log a$ bits)
+        \item Client/Querier sends pair of DPF keys corresponding to predicate i.e. special point is 3. (Communication: $\lambda\log a$ bits) 
+        \item Evaluate the DPF key on all the secret shared A-values (FSS gate?) and add the results? (Communication: $c_{reveal}$??)
+    \end{itemize}
+    \item For $q$ queries,
+    \begin{itemize}
+        \item Repeat above for $q$ queries. (Communication: $qc_{reveal}$?? bits)
+    \end{itemize}
+    \item Total Communication for $q$ queries: $q(N\log a + \lambda \log a + qc_{reveal})$ bits  
+\end{enumerate}
+
+\section{Setting 2}
+\begin{enumerate}
+    \item Consider a data owner D, that owns a database consisting of 2 attributes, A and B. A-values values range from 0 to (a-1) and B-values range from 0 to (b-1). D arithmetic secret shares this database between 2 servers, $S_1$ and $S_2$. We need at minimum, a $\log a$ bit ring to secret share the A-values values over and a $\log b$ bit ring to secret share the B-values over.
+    \item Consider the following query: COUNT() WHERE $A == 3 AND B == 10$ made by a client(s), where the query is public (visible to servers and D too).
+\end{enumerate}
+
+\subsection{Protocol 1 (Note this works even if predicate value i.e. 3 is private)}
+\begin{enumerate}
+    \item Offline Phase
+    \begin{itemize}
+        \item D distributes shares to $S_1$ and $S_2$ (Communication: $N(\log a + \log b)$ bits) (assuming D had the database in clear initially)
+    \end{itemize}
+    \item Online Phase
+    \item Per Query
+    \begin{itemize}
+        \item $S_1$ and $S_2$ check for each row whether the A-value is equal (secure equality) to 3 and whether the B-value is equal to 10 (Communication: $Nc_{eq_A} + Nc_{eq_B}$ bits)
+    \end{itemize}
+    \item For $q$ queries,
+    \begin{itemize}
+        \item Repeat above for $q$ queries. (Communication: $qN(c_{eq_A} + c_{eq_B})$ bits)
+    \end{itemize}
+    \item Total Communication for $q$ queries: $N(\log a + \log b) + q(N(c_{eq_A} + c_{eq_B}) + c_{reveal})$ bits
+\end{enumerate}
+
+\subsection{Protocol 2 (Dependent on predicate value i.e. 3 being public)}
+\begin{enumerate}
+    \item Offline Phase
+    \begin{itemize}
+        \item D distributes shares to $S_1$ and $S_2$ (Communication: $N(\log a + \log b)$ bits) (assuming D had the database in clear initially
+)
+        \item $S_1$ and $S_2$ check for each row whether the A-value is equal (secure equality) to $i$ for $i$ going from 0 to (a-1) and B-value is equal (secure equality) to $j$ for $j$ going from 0 to (b-1) (Communication: $N(ac_{eq_A} + bc_{eq_B})$ bits). With this, we have an ab-element vector with each element $i$ representing the count of $i$.
+    \end{itemize}
+    \item Online Phase
+    \item Per Query
+    \begin{itemize}
+        \item We just access the (3, 10)th element (predicate value-th element) from the ab-element vector and reveal it. (Communication: $c_{reveal} = \log N$ bits) 
+    \end{itemize}
+    \item For $q$ queries,
+    \begin{itemize}
+        \item Repeat above for $q$ queries. (Communication: $qc_{reveal}$ bits)
+    \end{itemize}
+    \item Total Communication for $q$ queries: $N(\log a + \log b) + N(ac_{eq_A} + bc_{eq_B}) + qc_{reveal}$ bits  
+\end{enumerate}
+
+% Bibliography
+%-----------------------------------------------------------------
+%\begin{thebibliography}{99}
+
+%\bibitem{HamCCS23} Gilad Asharov and Koki Hamada and Dai Ikarashi and Ryo Kikuchi and Ariel Nof and Benny Pinkas and Junichi Tomida \emph{Secure Statistical Analysis on Multiple Datasets: Join and Group-By}, {CCS} (2023)
+
+%\end{thebibliography}
+
+%\end{document}
