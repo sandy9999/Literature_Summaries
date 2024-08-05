@@ -28,22 +28,51 @@
 
 \underline{Example of Weighted Heavy Hitters}: If each input is a site visited by a user, then the weight might represent the time spend on the site by that user; and the T-weighted heavy hitters would represent the sites with the highest engagement (i.e. time spent on the site).
 
-\underline{Contributions of Mastic}:
+\subsection{Contributions of Mastic}
 \begin{enumerate}
-   \item First to solved weighted heavy hitters (not supported by Prio or Poplar)
-   \item Concrete improvements over Prio and Poplar in grouping general-purpose metrics by user attributes such as geographic location, browser version etc.
+   \item \textbf{Weighted Heavy Hitters}: First to solved weighted heavy hitters (not supported by Prio or Poplar)
+   \item \textbf{Attribute based Metrics}: Concrete improvements over Prio and Poplar in grouping general-purpose metrics by user attributes such as geographic location, browser version etc.
     \begin{itemize}
         \item Private network error logging
         \item Browser telemetry
     \end{itemize}
-    \item Secure in same threat model as Poplar
+    \item Secure in same threat model as Poplar (2 Servers, Privacy of inputs in presence of Malicious clients + 1 Malicious Server, Robustness of output in presence of Malicious clients)
     \item Technique improvement over Poplar:
     \begin{itemize}
         \item In Poplar, servers interactively compute arithmetic sketch over their shares to verify that their shares of $f_{\alpha, \beta}(x)$ for each candidate prefix x add up to a valid value. Requires 2 rounds of communication.
-        \item Mastic uses VIDPF (Verifiable IDPF, first introduced in PLASMA) based on efficient hashing techniques that provide a stronger and intuitive verifiability property with lower communication overhead.
+        \item Mastic uses VIDPF (Verifiable IDPF, first introduced in PLASMA) based on hashing, lower communication, 1 round of communication.
     \end{itemize}
 \end{enumerate}
 
+\subsection{Remarks}
+Poplar, PLASMA, Mastic are DP compatible, can be modified to report differentially private aggregations.
+
+\section{Primitives}
+\subsection{VIDPF}
+Poplar : Mastic :: IDPF + Malicious Secure Sketching : VIDPF \\
+
+where VIDPF = Antigoni's VDPF technique (extending leaf layer such that right children hold a sharing of 0, checking if shares of right children are equal) \\
+
+Security in Random Oracle model \\
+
+VIDPF in Mastic uses sum of weights rather prefix counts during tree traversal, to use compute subset of inputs whose total weight exceeds desired threshold. \\
+
+\underline{Security Properties}
+\begin{enumerate}
+    \item Correctness: When clients and servers (aggregators) are honest, servers correctly evaluate share of prefix tree.
+    \item Verifiability: When servers are honest, malicious clients cannot construct a public share and keys $(pub, key_0, key_1)$ for which evaluation tree contains more than 1 non-zero node at any level $k \in [n]$
+    \item Privacy: Info revealed to each server reveals nothing about honest client's input
+\end{enumerate}
+
+\subsection{Shared ZK Proofs}
+Security in Random Oracle model. \\
+
+\underline{Security Properties}
+\begin{enumerate}
+    \item Completeness: When the client and servers (aggregators) are honest, servers accept the client value. 
+    \item Soundness: When servers are honest, invalid client values are detected with high probability
+    \item Zero-Knowledge: When client and at least 1 server is honest, execution of the proof system reveals nothing about the client value beyond its validity.
+\end{enumerate}
 
 % Bibliography
 %-----------------------------------------------------------------

@@ -158,7 +158,7 @@
 \section{Setting 2}
 \begin{enumerate}
     \item Consider a data owner D, that owns a database consisting of 2 attributes, A and B. A-values values range from 0 to (a-1) and B-values range from 0 to (b-1). D arithmetic secret shares this database between 2 servers, $S_1$ and $S_2$. We need at minimum, a $\log a$ bit ring to secret share the A-values values over and a $\log b$ bit ring to secret share the B-values over.
-    \item Consider the following query: COUNT() WHERE $A == 3 AND B == 10$ made by a client(s), where the query is public (visible to servers and D too).
+    \item Consider the following query: COUNT() WHERE $A == 3 \;\&\&\; B == 10$ made by a client(s), where the query is public (visible to servers and D too).
 \end{enumerate}
 
 \subsection{Protocol 1 (Note this works even if predicate value i.e. 3 is private)}
@@ -199,6 +199,31 @@
     \item Total Communication for $q$ queries: $N(\log a + \log b) + N(ac_{eq_A} + bc_{eq_B}) + qc_{reveal}$ bits  
 \end{enumerate}
 
+\section{Setting 3}
+\begin{enumerate}
+    \item Consider a data owner D, that owns a database consisting of 2 attributes, A and B. A-values values range from 0 to (a-1) and B-values range from 0 to (b-1). D boolean secret shares each bit of this database over a $\log N$ bit ring between 2 servers, $S_1$ and $S_2$. This means, we are secret sharing $N(\log a + \log b)$ bits over a $\log N$ bit ring. 
+    \item Consider the following query: COUNT() WHERE $A == 3 \;\&\&\; B == 10$ made by a client(s), where the query is public (visible to servers and D too).
+\end{enumerate}
+
+\subsection{Protocol 1 (Note this works even if predicate value i.e. 3 is private)}
+\begin{enumerate}
+    \item Offline Phase
+    \begin{itemize}
+        \item D distributes shares to $S_1$ and $S_2$ (Communication: $N(\log a + \log b)\log N$ bits) (assuming D had the database in clear initially)
+    \end{itemize}
+    \item Online Phase
+    \item Per Query
+    \begin{itemize}
+        \item Let's denote the boolean shares of $A$ to be $A_1$ and $A_2$. Similarly, shares of $B$ are $B_1$ and $B_2$.
+        \item Let's denote the boolean shares of A-value in predicate to be $QA_1$ and $QA_2$. Similarly, shares of B-value in predicate are $QB_1$ and $QB_2$. Querier/Client distributes these shares to $S_1$ and $S_2$ (Communication: $(\log a + \log b)\log N$ bits).
+        \item $S_1$ locally XORs $A_1$ and $QA_1$ and stores NOT of the result. and $S_2$ check for each row whether the A-value is equal (secure equality) to 3 and whether the B-value is equal to 10 (Communication: $Nc_{eq_A} + Nc_{eq_B}$ bits)
+    \end{itemize}
+    \item For $q$ queries,
+    \begin{itemize}
+        \item Repeat above for $q$ queries. (Communication: $qN(c_{eq_A} + c_{eq_B})$ bits)
+    \end{itemize}
+    \item Total Communication for $q$ queries: $N(\log a + \log b) + q(N(c_{eq_A} + c_{eq_B}) + c_{reveal})$ bits
+\end{enumerate}
 % Bibliography
 %-----------------------------------------------------------------
 %\begin{thebibliography}{99}

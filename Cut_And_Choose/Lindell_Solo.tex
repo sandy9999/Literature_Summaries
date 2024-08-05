@@ -1,0 +1,123 @@
+%\documentclass{article}
+%\usepackage[
+%    left=1.2in,
+%    right=1.2in,
+%    top=0.4in,
+%    bottom=0.7in,
+%    paperheight=11in,
+%    paperwidth=8.5in
+%]{geometry}
+
+%\usepackage{layout}
+\clearpage
+\mytitle{Fast Cut-and-Choose Based Protocols for Malicious and Covert Adversaries \large \\Paper Summary}
+%\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+%\author{Sandhya Saravanan\\
+%  \small MSR, India\\\\
+%}
+%\date{\vspace{-5ex}}
+
+%\begin{document}
+%\maketitle
+\setcounter{section}{0} % Restart section numbering
+
+\section{Summary}
+Consider Yao's protocol that consists of a garbler and an evaluator. Consider a malicious garbler. What can go wrong?
+\begin{enumerate}
+    \item Garbler may construct a circuit that computes a different function (Harms correctness, privacy, independence of inputs)
+    \item Garbler can carry out a selective input attack i.e. garbler can input an incorrect key for the 0-value on the 1st bit of evaluator's input and a correct key for the 1-value. If 1st bit of evaluator's input is 1, circuit decrypts correctly, else it doesn't, which reveals to garbler info on what 1st bit of evaluator's input is. This is not possible in the ideal world. (Why?)
+    \item Garbler may construct a circuit that reveals more about evaluator's input, even embeds evaluator's entire input in the output.
+\end{enumerate}
+
+\subsection{Motivation}
+We need solutions to force the garbler/circuit constructor to behave honestly. Possible approaches:
+\begin{enumerate}
+    \item Prove correctness of circuit construction using ZK
+    \item LEGO: prove correctness of gate construction, and then solder gates together
+    \item Virtual MPC
+    \item From multiplication triples to arithmetic circuit construction
+    \item Cut and choose to prove correctness of Yao's circuits 
+\end{enumerate}
+
+\subsection{Approach 1: ZK Proving}
+\begin{enumerate}
+    \item Encrypt gates using asymmetric encryption with algebraic structure. Use Camenisch-Shoup based on DCR (N-residuosity): 2 exponentiations mod $N^2$
+    \item Use structure to prove in ZK that circuit is correctly constructed. E.g. used correct keys, gate has correct structure etc
+    \item Cost: $O(1)$ exponentiations/gate (Here $O(1)$ is 720), more expensive than DH exponentiations in EC group.
+    \item Scope for optimization:
+    \begin{itemize}
+        \item How to build gates so that they yield efficient proofs, and therefore, more efficient ZK protocols?
+        \item Batching of ZK protocols?
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Approach 2: LEGO}
+\begin{enumerate}
+    \item Generate many encrypted gates using homomorphic (Petersen) commitments
+    \item Open half of the gates to check that they are correctly formed (Guarantees that majority of remaining gates are correct). 
+    \item Combine remaining gates in fault tolerant circuit (can tolerate some no. of incorrect gates and still correctly compute the function). Use homomorphic property to solder gates
+    \item Compute above circuit 
+    \item Size of fault tolerant circuit: $O(s|C|/\log|C|)$. $s$ is statistical security param. Error is $2^{-s}$.
+    \item Why is the size of the fault tolerant circuit so big? For every gate to be computed, we replace it with $s$ gates and take the majority result of these gates.
+    \item No. of exponentiations (DH) / gate = 32
+\end{enumerate}
+
+\subsection{Approach 4: Multiplication Tuples (Arithmetic Circuits)}
+\begin{enumerate}
+    \item Parties share their inputs like in BGW
+    \item Assume that parties have many tuples of the form [Com(x), Com(y), Com(z)] where $x = y.z$ together with additive shares $(x_1, x_2), (y_1, y_2), (z_1, z_2)$ of $x, y, z$. 
+    \item Note: Com is homomorphic
+    \begin{itemize}
+        \item Given share of Com(x), Com(y), we can compute shares of Com(x+y).
+        \item Given shares of a, x, we can compute shares of Com(a.x). 
+    \end{itemize}
+    \item Setting 
+    \begin{itemize}
+        \item Wire 1: $P_1$ and $P_2$ have additive shares $u_1$, $u_2$ of $u$.
+        \item Wire 2: $P_1$ and $P_2$ have additive shares $v_1$, $v_2$ of $v$.
+        \item Aim: Compute shares of $w=u.v$ i.e. compute $w_1$, $w_2$ s.t. $w_1 + w_2 = (u_1 + u_2).(v_1 + v_2)$
+        \item $P_1$ and $P_2$ have additive shares of Com(x), Com(y), Com(z) where $x =y.z$.
+        \item They compute shares of Com(u-y) and open. Let's call this u'
+        \item They compute shares of Com(v-z) and open. Let's call this v'
+        \item They compute shares of Com(u'.v) + Com(v'.u) + Com(x) - u'.v'
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Approach of this Paper: Cut and Choose}
+Considered the best for boolearn circuits ? \\
+\begin{enumerate}
+    \item Garbler ($P_1$) constructs $s$ circuits instead of 1 circuit and sends them all to evaluator ($P_2$).
+    \item $P_2$ chooses a random subset of half of those circuits and asks $P_1$ to open them i.e. $P_2$ gets access to all the keys corresponding to the input wires.
+    \item $P_2$ decrypts the entire circuit and checks that it really is a circuit computing the function.
+    \item Guarantee: Majority of the remaining circuits are correctly constructed
+    \item $P_1$ and $P_2$ compute all of the remaining garbled circuits (computing 1 not enough as it is only guaranteed that the majority are correctly constructed)
+    \item What does $P_2$ do if it obtains different outputs?
+    \begin{itemize}
+        \item What if $P_2$ aborts? $P_1$ can execute the following attack. $P_1$ constructs 1 circuit that outputs garbage if the first bit of $P_2$'s input equals 0 (otherwise, computes $f$). If $P_2$ aborts, $P_1$ knows that $P_2$'s 1st input equals 0.
+        \item What if $P_2$ outputs the majority value? Correct option. 
+    \end{itemize}
+    \item What if $P_1$ constructs a garbled circuit $G$ with 2 different sets of garbled values / keys $K$, $K'$ s.t. the keys in $K$ decrypt $G$ to the correct circuit $C$ and the keys in $K'$ decrypt $G$ to an incorrect circuit $C'$. This can be solved by having $P_1$ commit to the input keys. Later on, the computation happens on committed keys, not on arbitrary keys.
+    \item Input consistency: What if $P_2$ uses different inputs $y_1$, $y_2$, ... in different circuits to get $f(x, y_1)$, $f(x, y_2)$ etc. Similarly, what if $P_1$ uses different inputs $x_1$, $x_2$, ... in different circuits to get $f(x_1, y)$, $f(x_2, y)$ etc. $P_2$ may not detect this from the output, as the function can be customized accordingly such that it doesn't.
+    \item Cut and Choose doesn't help with selective input attack. Solution to prevent selective input attack: 
+    \begin{itemize}
+        \item Split each input bit $y$ of $P_2$ into $s$ random bits $y_1, ..., y_s$ such that $y_1 \oplus y_2 \oplus ... \oplus y_s = y$
+        \item Change circuit to first compute XOR of these bits and then the function.
+        \item Each input bit is now random (correlation between $y_1$, ..., $y_s$ and actual bit $y$ can be guessed with probability $2^{-s}$). Thus, any attack on input bits is not correlated to actual input.
+    \end{itemize}
+
+\end{enumerate}
+
+\subsection{Cost of Cut and Choose}
+How many circuits are needed to make sure that the majority of the circuits sent by garbler are correct? \\
+
+With $s$ circuits, probability of cheating is $2^{-0.311s}$
+
+% Bibliography
+%-----------------------------------------------------------------
+\begin{thebibliography}{99}
+
+\bibitem{Lindell13} Yehuda Lindell, Bar-Ilan University \emph{Fast Cut-and-Choose Based Protocols for Malicious and Covert Adversaries}, {Crypto} (2013)
+
+\end{thebibliography}
+
+%\end{document}

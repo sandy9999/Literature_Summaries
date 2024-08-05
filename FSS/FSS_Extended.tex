@@ -31,176 +31,18 @@ Main Results
     \item Verifiable FSS: Efficient protocols for verifying that keys $(k_1^*, k_2^*, ..., k_m^*)$, obtained from a potentially malicious user, are consistent with some $f \in \mathcal{F}$.
 \end{enumerate}
 
-\subsection{Motivating Question}
-Suppose we are given a class $\mathcal{F}$ of efficiently computable and succinctly described functions $f: \{0, 1\}^n \rightarrow \mathbb{G}$. Is it possible to split an arbitrary $f \in \mathcal{F}$ into $p$ functions $f_1, ..., f_p$ such that:
-\begin{enumerate}
-    \item $f(x) = \sum_{i=1}^pf_i(x)$ (on every input x)
-    \item Each $f_i$ is described by a short key $k_i$ that enables its efficient evaluation
-    \item Any strict subset of the keys completely hides $f$
-\end{enumerate}
-Solution to this problem is called function secret sharing (FSS) scheme for $\mathcal{F}$
+\subsection{DPF Tensor Operation}
 
-\subsection{Distributed Point Function (DPF)}
-2-party FSS for the function class $\mathcal{F}$ consisting of all point functions.\\
+\[
+g_{\alpha, f}(x, y) := f_{\alpha, 1}(x).f(y) =
+\begin{cases} 
+f(y) & \text{if } x = \alpha \\
+0 & \text{otherwise}
+\end{cases}
+\]
 
-\underline{Point Function}: Function $\{0, 1\}^n \rightarrow \mathcal{G}$ that evaluates to 0 on all but at most one input. \\
+If $f_{\alpha, 1}$ supports $n_1$ bit inputs, $f$ supports $n_2$ bit inputs, then $g_{\alpha, f}$ supports $(n_1 + n_2)$ bit inputs. \\
+Key size of $g_{\alpha, f}$ corresponds to key size of $f_{\alpha, 1}$ + 2 times key size of $f$.
 
-For $x \in \{0, 1\}^n$ and $y \in \mathcal{G}$, we denote by $f_{x, y}$ the point function that evaluates to $y$ on input $x$ and to $0$ on all other inputs.
-
-\subsection{Motivating Applications}
-\begin{enumerate}
-    \item Multi-Server PIR and Secure Keyword Search
-    \begin{itemize}
-        \item Suppose that each of $p$ servers holds a database $D$ of $m$ keywords $w_j \in \{0, 1\}^n$.
-        \item A client wants to count the no. of occurrences of a given keyword $w$ without revealing $w$ to any strict subset of the servers.
-        \item $\mathbb{G} = \mathbb{Z}_{m+1}$ and $f = f_{w, 1}$
-        \item Client splits $f$ into additive shares and sends to server $i$ the key $k_i$ describing $f_i$.
-        \item Server $i$ computes and sends back to the client $\sum_{w_j \in D}f_i(w_j)$
-        \item Client can find the no. of matches by adding the $p$ group elements received from the servers.
-        \item Applications of FSS for other classes $\mathcal{F}$
-        \begin{itemize}
-            \item Count no. of keywords that lie in an interval
-            \item Count no. of keywords that satisfy a fuzzy match criterion
-        \end{itemize}
-    \end{itemize}
-    \item Incremental Secret Sharing
-    \begin{itemize}
-        \item Let $p$ servers maintain a large secret shared array of group elements where each entry in the array is initialized to 0 and incremented whenever the corresponding website is visited.
-        \item A client who visits URL $u$ can now secret share the point function $f = f_{u, 1}$.
-        \item Each server $i$ updates its shared entry of each URL $u_j$ by locally adding $f_i(u_j)$ to this share.
-        \item Applications of FSS for other classes $\mathcal{F}$
-        \begin{itemize}
-            \item Secretly increment all entries whose public attributes satisfy some secret predicate 
-        \end{itemize}
-    \end{itemize}
-\end{enumerate}
-
-\subsection{Alternative Approaches for above Motivating Applications}
-\begin{enumerate}
-    \item Information-Theoretic Multi-Server PIR
-    \item Single-Server PIR
-    \item FHE and TFHE
-    \item ORAM
-\end{enumerate}
-
-\subsection{Definitions}
-\underline{Output Decoder} (Think reconstruct output): A p-party share output decoder DEC is a tuple ($S_1, ..., S_p, R, Dec$) specifying: share spaces $S_1, ..., S_p$ for each of the $p$ parties; output space R; and a decoder function Dec: $S_1 \times ... \times S_p \rightarrow R$ taking parties' shares to an output.\\
-
-\noindent \underline{Additive Output Decoder}: p-party additive output decoder for an Abelian group $\mathbb{G}$ is defined to the tuple $DEC = ((\mathbb{G}, ..., \mathbb{G}), \mathbb{G}, Dec^+)$ where $Dec^+(g_1, ..., g_p) = \sum_{i=1}^pg_i$ computes the sum of elements wrt the group operator of $\mathbb{G}$. (We consider this in this work to enable share compressibility)\\
-
-\noindent \underline{Function Family}: (Refer Crypto course notes) \\
-
-\noindent \underline{Function Secret Sharing}: (Too long to type, refer paper) \\
-
-\subsection{Strawman Solutions for Output Decoding}
-\begin{enumerate}
-    \item For any efficient function family $\mathcal{F}$, one can generate FSS keys for a secret function $f \in \mathcal{F}$ simply by sharing a description of $f$ interpreted as a string, using a standard secret sharing scheme. Evaluation procedure on any input $x$ outputs $x$ together with party's share of $f$. Decoding procedure Dec first reconstructs the description of $f$, and then compute and output the value $f(x)$. From just one evaluation, entire function $f$ is revealed to whichever party receives and reconstructs these output shares. Here arises the need for "function privacy": Pair of parties' output shares for each input $x$ can be simulated given just the corresponding outputs $f(x)$.
-    \item Given a secret function $f$, take 1 FSS key to be a garbled circuit of $f$, and second key as info that enables translating inputs $x$ to garbled input labels. This is function private for one output evaluation, can be extended to many-output case by adding shared secret randomness to parties' keys. But although output shares now hide $f$, their size is massive -- for every output, comparable to a copy of f itself.
-\end{enumerate}
-
-\subsection{Construction for 2-party Point Functions}
-\underline{High Level Idea}: Each party's key $k_0$ and $k_1$ defines a binary tree of depth $n$ with a pseudo random string at each node (strings are S||T's). The binary trees defined by $k_0$ and $k_1$ are identical except for the path from the root to the target point $a = a_1, ..., a_n$. On this path, the strings in the 2 trees are chosen pseudorandomly and independently of each other.
-
-\subsubsection{Working of $Eval(\beta, k_{\beta}, x)$}
-$\beta$ = Party identifier (In 2-party case, it is either 0 or 1) \\
-$k_{\beta}$ = Key associated with party (Party 0 holds $k_0$, Party 1 holds $k_1$) \\
-$x$ = Input on which function should be evaluated \\
-
-\noindent \underline{Working}: Traverses a path in the tree that $k_{\beta}$ defines from the root to leaf node $x = x_1, ..., x_n$. At the exact point that a prefix of $x$ diverges from the path to $a$, $Eval(0, k_0, x)$ and $Eval(1, k_1, x)$ compute the same strings $S, T$ (Then, for any path continuing from this point, the values will always remain equal). \\
-
-To simplify notation, consider that we do $Eval(0, k_0, x)$. Each node $i$ for Party 0 is associated with string $S_0[i] || S_1[i] || T_0[i], T_1[i]$. Eval computes corresponding strings for $x_i$-th child (left or right) by expanding either the left or right seed $S_{x_i}[i]$ using the PRG $G(S_{x_i}[i])$ and adding in correction strings $cs$, $ct$ (from the key $k_{\beta}$) to the corresponding $s$ and $t$ portions of the expanded output, as dictated by the bit $T_{x_i}[i]$.
-
-\begin{algorithm}[H]
-    \KwIn{$\beta, k_{\beta}, x = (x_1, ..., x_n)$}
-    \KwOut{}
-    $G: \{0, 1\}^{\lambda} \rightarrow \{0, 1\}^{max(2\lambda + 2, m)}$ \\
-    $k_{\beta} = ((S_0^{\beta}[1], S_1^{\beta}[1], T_0^{\beta}[1], T_1^{\beta}[1]), (CW_0[1], CW_1[1], ..., CW_0[n-1], CW_1[n-1]), w)$ \\
-    $S \leftarrow S_{x_1}^{\beta}[1]$ \\
-    $T \leftarrow T_{x_1}^{\beta}[1]$ \\
-    \For{$i$ = $2$ to $n$}{
-        Parse $G(S)$ as $G(S) = s_0 || s_1 || t_0 || t_1$ \\
-        Parse $CW_T[i-1]$ as $CW_T[i-1] = cs_{T,0} || cs_{T,1} || ct_{T,0} || ct_{T,1}$ \\
-        Set $S \leftarrow s_{x_i} \oplus cs_{T, x_i}$
-        Set $T \leftarrow t_{x_i} \oplus ct_{T, x_i}$
-    }
-    Return G(S).w with arithmetic over $\mathbb{F}_{2^m}$
-\end{algorithm}
-
-\subsubsection{Working of $Gen(1^{\lambda}, a, b)$}
-%$\beta$ = Party identifier (In 2-party case, it is either 0 or 1) \\
-%$k_{\beta}$ = Key associated with party (Party 0 holds $k_0$, Party 1 holds $k_1$) \\
-%$x$ = Input on which function should be evaluated \\
-
-\noindent \underline{Working}: To ensure correct creation of the 2 trees as per the invariant described in the Eval section. 
-
-\begin{algorithm}[H]
-    \KwIn{$a = (a_1, ..., a_n), b$}
-    \KwOut{}
-    $G: \{0, 1\}^{\lambda} \rightarrow \{0, 1\}^{max(2\lambda + 2, m)}$ \\
-    Choose 3 random seeds: $S_{a_1}^0[1]$, $S_{a_1}^1[1]$, $S_{\neg a_1}^0[1]$ and set $S_{\neg a_1}^1[1] \leftarrow S_{\neg a_1}^0[1]$ \\
-    Choose 4 random bits $T_{\alpha}^{\beta}[1]$, for $\alpha, \beta \in \{0, 1\}$, subject to $T_{a_1}^{0}[1] \neq T_{a_1}^{1}[1]$ and $T_{\neg a_1}^{0}[1] = T_{\neg a_1}^{1}[1]$ \\
-    \For{$i = 1$ to $n-1$}{
-        $G(S_{a_i}^{\beta}[i]) = s_0^{\beta} || s_1^{\beta} || t_0^{\beta} || t_1^{\beta}$ where $s_{\alpha}^{\beta} \in \{0, 1\}^{\lambda}, t_{\alpha}^{\beta} \in \{0, 1\}$ for $\alpha, \beta \in \{0, 1\}$ \\
-        Randomly choose $cs_{0, a_{i+1}}, cs_{1, a_{i+1}} \in \{0, 1\}^{\lambda}$ \\
-        Randomly choose $cs_{0, \neg a_{i+1}}, cs_{1, \neg a_{i+1}} \in \{0, 1\}^{\lambda}$ subject to $\oplus_{\beta = 0}^1 (cs_{\beta, \neg a_{i+1}} \oplus s_{\neg a_{i+1}}^{\beta}) = 0$ \\
-        Randomly choose $ct_{0, a_{i+1}}, ct_{1, a_{i+1}} \in \{0, 1\}$ subject to $\oplus_{\beta = 0}^1 (ct_{\beta, a_{i+1}} \oplus t_{a_{i+1}}^{\beta}) = 1$ \\
-        Randomly choose $ct_{0, \neg a_{i+1}}, ct_{1, \neg a_{i+1}} \in \{0, 1\}$ subject to $\oplus_{\beta = 0}^1 (ct_{\beta, \neg a_{i+1}} \oplus t_{a_{i+1}}^{\beta}) = 0$ \\
-        Set $CW_{\beta}[i] \leftarrow cs_{\beta, 0} || cs_{\beta, 1} || ct_{\beta, 0} || ct_{\beta, 1}$ for $\beta = 0, 1$ \\
-        Set $S_{\alpha}^{\beta}[i+1] \leftarrow s_{\alpha}^{\beta} \oplus cs_{\tau, \alpha}$ for $\tau = T_{a_i}^{\beta}[i]$ and $\alpha, \beta \in \{0, 1\}$ \\
-        Set $T_{\alpha}^{\beta}[i+1] \leftarrow t_{\alpha}^{\beta} \oplus ct_{\tau, \alpha}$ for $\tau = T_{a_i}^{\beta}[i]$ and $\alpha, \beta \in \{0, 1\}$ \\
-    }
-    \eIf{$G(S_{a_n}^{0}[n]) \neq G(S_{a_n}^{1}[n]) $}{
-        Set $w \leftarrow (G(S_{a_n}^{0}[n]) + G(S_{a_n}^{1}[n]))^{-1}.b$ with arithmetic over $\mathbb{F}_{2^m}$
-    }
-    {
-        Set $w \leftarrow 0$
-    }
-    Set $k_{\beta} \leftarrow ((S_0^{\beta}[1], S_1^{\beta}[1], T_0^{\beta}[1], T_1^{\beta}[1]), (CW_0[1], CW_1[1], ..., CW_0[n-1], CW_1[n-1]), w)$ \\
-    Return $(k_0, k_1)$
-
-\end{algorithm}
-
-\noindent \underline{Intuitive Security of this Construction}: All info related to point function $f_{a, b}$ is encoded in the strings $cs, ct$, masked by pseudo random strings whose seeds appear only in the other party's key. Original values of $S, T$ are completely independent of the point function.
-
-\subsection{p-party Protocol}
-\underline{Strawman solution}: For a family of functions $\mathcal{F}: \{0, 1\}^n \rightarrow \{0, 1\}^m$, we can simply secret share the entire evaluation table of $f$ among parties as a string. Key size would be $2^n.m$. \\
-
-\noindent \underline{Solution in this work}: Key size is $O(2^{n/2}.2^{p/2}.m)$ to share DPF $P_{a, b}: \{0, 1\}^n \rightarrow \{0, 1\}^m$, secure against any coalition of at most $p-1$ key holders.
-
-\noindent \underline{Idea}: Consider the $2^n$-entry evaluation table of the secret function $f_{a, b}$ as a $2^{n/2} \times 2^{n/2}$ grid where rows and columns are indexed by the first and second $n/2$ bits of the input.
-
-\subsubsection{Working of Gen}
-\begin{enumerate}
-    \item For each row $\gamma' \in \{0, 1\}^{n/2}$ in the table, it samples $2^{p-1}$ random $\lambda$-bit strings $s_{\gamma', 1}, ..., s_{\gamma', 2^{p-1}} \in \{0, 1\}^\lambda$ 
-    \item In addition, it generates $2^{p-1}$ total (not per row) correction words $cw_1, ..., cw_{2^{p-1}} \in (\{0, 1\}^m)^{2^{n/2}}$, as a function of the strings $s_{\gamma', l}$ and the secret function $P_{a, b}$.
-    \item Each party $i$ receives as its key, the collection of all $2^{p-1}$ correction words and some subset of the PRG seeds. 
-\end{enumerate}
-
-\subsubsection{Working of Eval}
-\begin{enumerate}
-    \item Given a party's key and input $x$, it parses $x = (\gamma', \delta') \in \{0, 1\}^{n/2} \times \{0, 1\}^{n/2}$ takes its set of PRG seeds corresponding to the row $\gamma'$, expands each via $G$ to a vector  $(\{0, 1\}^m)^{2^{n/2}}$ which matches the form of a row in the function evaluation table, takes the xor of all the expanded vectors together with the corresponding subset of correction words and outputs the $\delta'$-th component of this row vector.
-\end{enumerate}
-
-\subsubsection{Working of Gen}
-\begin{enumerate}
-    \item For each row $\gamma'$ not equal to the special row $\gamma$ and for each of the $2^{p-1}$ PRG seeds $s_{\gamma', j}$ corresponding to this row, it will hold that the no. of parties holding $s_{\gamma', j}$ in their key is \underline{even}. This is so during the evaluation phase, all contributions from $G(s_{\gamma', j}$ and from its corresponding $j$-th correction word $cw_j$ will cancel out, leaving the desired 0 evaluation. 
-    \item For special row $\gamma$ each PRG seeds $s_{\gamma, j}$ corresponding to this row, it will hold that the no. of parties holding $s_{\gamma, j}$ in their key is \underline{odd}. This is so during the evaluation phase, there is exactly one contribution from $G(s_{\gamma, j}$ and each $cw_j$. Also, for each party $i$, there is at least one seed $s_{\gamma, j}$ for which party $i$ is the only party given $s_{\gamma, j}$. $G(s_{\gamma, j}$ for the uncorrupted party for the special row $\gamma$ serves as a mask to hide information on $P_{a, b}$ in the correction words.
-    \item Given any (p-1) keys, Cases (1) and (2) are indistinguishable.
-    \item Correction words $cw_j, j \in [2^{p-1}]$ are chosen randomly subject to the constraint $\oplus_{j=1}^{2^{p-1}}(cw_j \oplus G(s_{\gamma, j})) = e_\delta.b$ where $e_\delta$ denotes the unit vector whose $\delta$-th component is equal to 1. Since $cw_j$ are random up to this condition, even given any $2^{p-1}-1$ of the seeds $s_{\gamma, j}$ (but with one missing), distribution of these seeds together with all the $cw_j$'s is computationally indistinguishable from random.
-\end{enumerate}
-
-\subsubsection{Intuitive Proof of Security}
-
-\subsubsection{Number Theory Property instrumental in Construction}
-Given natural nos $p$ and $q$, for exactly $q^{p-1}$ of the sequences of length $p$ over the set $\{0, ..., q-1\}$ the sum of the $p$ elements modulo $q$ is 0 and for exactly $q^{p-1}$ of these sequences the sum of all the elements modulo $q$ is 1.
-
-\subsection{FSS Closure Properties}
-\begin{enumerate}
-    \item $\mathcal{F} \rightarrow \mathcal{F} \cup \{0\}$: size($\mathcal{F} \cup \{0\}$) = size($\mathcal{F}$), time($\mathcal{F} \cup \{0\}$) = time($\mathcal{F}$)
-    \item $(\mathcal{F}, g) \rightarrow \mathcal{F} \circ g$ where $g$ is an arbitrary fixed public function: size = $|g| + $ size($\mathcal{F}$), time = $|g| + $ time($\mathcal{F}$)
-    \item $(\mathcal{F}, \mathcal{L} \rightarrow \mathcal{L} \circ \mathcal{F}$ where $\mathcal{L}$ is a fixed linear function. size = size($\mathcal{F}$) + $|\mathcal{L}|$, time = time($\mathcal{F}$) + $|\mathcal{L}|$
-    \item $(\mathcal{F}, \mathcal{G}) \rightarrow \mathcal{F} + \mathcal{G}$: size = size($\mathcal{F}$) + size($\mathcal{G}$), time = time($\mathcal{F}$) + time($\mathcal{G}$)
-    \item $(\mathcal{F}, \mathcal{G}) \rightarrow \mathcal{F} \cup \mathcal{G}$: size = size($\mathcal{F}$) + size($\mathcal{G}$), time = time($\mathcal{F}$) + time($\mathcal{G}$)
-    \item FSS for Small Function Classes - Didn't get 
-\end{enumerate}
+\subsection{2PC FSS Scheme for Decision Trees}
 %\end{document}

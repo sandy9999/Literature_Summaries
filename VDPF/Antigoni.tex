@@ -1,0 +1,67 @@
+%\documentclass{article}
+%\usepackage[
+%    left=1.2in,
+%    right=1.2in,
+%    top=0.4in,
+%    bottom=0.7in,
+%    paperheight=11in,
+%    paperwidth=8.5in
+%]{geometry}
+
+%\usepackage{layout}
+\clearpage
+\mytitle{Lightweight, Maliciously Secure Verifiable Function Secret Sharing  \large \\Paper Summary}
+%\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+%\author{Sandhya Saravanan\\
+%  \small MSR, India\\\\
+%}
+%\date{\vspace{-5ex}}
+
+%\begin{document}
+%\maketitle
+\setcounter{section}{0} % Restart section numbering
+
+\section{Contributions}
+\begin{enumerate}
+    \item Verifiable FSS for point functions
+    \item Verifiable FSS for multi-point functions
+\end{enumerate}
+
+Independent of output group size, structure of DPF output, set of points on which DPF must be evaluated. \\
+
+\subsection{Security Model}
+\begin{enumerate}
+    \item 2P, no collusion
+    \item If client deviates from protocol, SH servers detect misbehaviour
+    \item If one of the servers is corrupted, client's privacy is maintained. 
+\end{enumerate}
+
+Works compared with: BGI16, Poplar \\
+
+\subsection{Starting Point: Verifying Zero Function}
+Consider 2 servers $S_0$ and $S_1$ that have shares of $\bar{y}$ i.e. $S_0$ has $[\bar{y}]_0$ and $S_1$ has $[\bar{y}]_1 = -[\bar{y}]_0$. Now, $S_1$ negates its share i.e. $S_1$ now holds $[\bar{y}]_0$. $S_0$ and $S_1$ now have identical vectors. To check, hash to $2\lambda$ bits and exchange them.
+
+\subsection{BGI16 Construction}
+Let $y$ be the length-N vector obtained on EvalAll of DPF key ($\beta=0/1$). Let $y_0$ and $y_1$ be the shares of $y$. Consider a 3xN matrix, each column j of L defined to be $L_{1, j} = r_j$, $L_{2, j} = s_j$ and $L_{3, j} = r_j.s_j$ where $r_j, s_j$ are sampled uniformly at random over $\mathbb{F}$. \\
+
+Key idea: $L.y_b = z_b$ where $z_b$ is a secret sharing of $(z_1, z_2, z_3)$. \\
+
+$S_0$ and $S_1$ check if $z_3 = z_1.z_2$ using MPC. Probability that this check passes if $y$ is not the non-zero vector of unit vector is at most $2/\mathbb{F}$. For security parameter $\lambda$, $\mathbb{F}$ must be at least $2^{\lambda+1}$.
+
+\subsection{Drawbacks of BGI16 Construction}
+Consider general $\beta$ (value at special point) i.e. $\beta \neq \beta^2$. Our final MPC check is now for $\beta.z_3 = z_1.z_2$. Client provides secret sharing of $\beta$ to compute this. This construction is vulnerable to additive attacks.
+
+\subsubsection{Additive Attack (Malicious Server case)}
+Consider that a malicious server adds $\Delta$ to $z_3$. This can be done by adding $\Delta$ to a share of $z_3$. Also consider that the server adds $3\Delta$ to $z_1.z_2$ i.e. to a share of the output of multiplication gate with inputs $z_1$ and $z_2$. If $\beta.(z_3+\Delta) \neq z1.z2 + 3\Delta$, servers can conclude that $\beta \neq 3$. 
+
+\subsection{Poplar Construction}
+To solve the additive attacks problem in BGI16, Poplar does the following.
+
+Let $y$ be the length-N vector obtained on EvalAll of DPF key. $y$ has value $\beta$ at special point. Let $y*$ be the length-N vector that has value $k.\beta$ at special point.
+
+Let $y_0$, $y_1$ be the shares of $y$ and $y^*_0$, $y^*_1$ be the shares of $y^*$. Let $r = (r_1, r_2, ..., r_N)$ be an N-length vector with each element $r_i$ is sampled uniformly at random from $\mathbb{F}$. Let $r^* = (r_1^2, ..., r_N^2)$. \\
+
+Let $z_b = \langle r, y_b \rangle$. $z_b^* = \langle r^*, y_b \rangle$. $z_b^{**} = \langle r, y_b^* \rangle$.
+
+Servers use secure computation to check: $(z^2 - z^*) + (k.z - z^{**})$
+%\end{document}
