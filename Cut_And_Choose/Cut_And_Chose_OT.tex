@@ -10,7 +10,7 @@
 
 %\usepackage{layout}
 \clearpage
-\mytitle{Fast Cut-and-Choose Based Protocols for Malicious and Covert Adversaries \large \\Paper Summary}
+\mytitle{Secure Two-Party Computation via Cut-and-Choose Oblivious Transfer \large \\Paper Summary}
 %\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
 %\author{Sandhya Saravanan\\
 %  \small MSR, India\\\\
@@ -31,8 +31,9 @@ Many circuits sent, some of them are opened to check that they are correct while
 
 \subsection{Selling Point}
 \begin{enumerate}
-    \item For cheating probability of $2^{-40}$, best previous works send between 125 and 128 circuits. In this work, $40$ circuits with some additional overhead suffice.
-    \item Previous works achieve cheating probability of $2^{-0.311s}$. This work achieves cheating probability of $2^{-s}$. $s$ = No. of garbled circuits.
+    \item For cheating probability of $2^{-40}$, best previous works send between 680 circuits. In this work, 132 circuits suffice.
+    \item Previous works achieve cheating probability of $2^{-s/17}$. This work achieves cheating probability of $2^{-0.311s}$ where $s$ = No. of garbled circuits.
+    \item Moderate increase in no. of exponentiations, reduced no. of circuits, commitments completely removed, no need to increase size of inputs.
 \end{enumerate}
 
 \subsection{Previous Works' Protocol}
@@ -41,6 +42,8 @@ Many circuits sent, some of them are opened to check that they are correct while
     \item $P_2$ chooses a subset of circuits which are opened and checked.
     \item If all these circuits are correct, then remaining circuits are evaluated as in Yao's protocol, and $P_2$ outputs majority output value.
 \end{enumerate}
+
+This work relies on decisional DDH assumption, while previous works relied on general assumptions.
 
 \subsection{What if $P_2$ aborts?}
 If $P_2$ receives different outputs in different circuits, they know that $P_1$ cheated. Can't they ($P_2$) abort?

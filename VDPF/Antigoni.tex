@@ -52,16 +52,64 @@ $S_0$ and $S_1$ check if $z_3 = z_1.z_2$ using MPC. Probability that this check 
 Consider general $\beta$ (value at special point) i.e. $\beta \neq \beta^2$. Our final MPC check is now for $\beta.z_3 = z_1.z_2$. Client provides secret sharing of $\beta$ to compute this. This construction is vulnerable to additive attacks.
 
 \subsubsection{Additive Attack (Malicious Server case)}
-Consider that a malicious server adds $\Delta$ to $z_3$. This can be done by adding $\Delta$ to a share of $z_3$. Also consider that the server adds $3\Delta$ to $z_1.z_2$ i.e. to a share of the output of multiplication gate with inputs $z_1$ and $z_2$. If $\beta.(z_3+\Delta) \neq z1.z2 + 3\Delta$, servers can conclude that $\beta \neq 3$. 
+Consider that a malicious server adds $\Delta$ to $z_3$. This can be done by adding $\Delta$ to a share of $z_3$. Also consider that the server adds $3\Delta$ to $z_1.z_2$ i.e. to a share of the output of multiplication gate with inputs $z_1$ and $z_2$. If $\beta.(z_3+\Delta) \neq z_1.z_2 + 3\Delta$, servers can conclude that $\beta \neq 3$. 
 
 \subsection{Poplar Construction}
 To solve the additive attacks problem in BGI16, Poplar does the following.
 
-Let $y$ be the length-N vector obtained on EvalAll of DPF key. $y$ has value $\beta$ at special point. Let $y*$ be the length-N vector that has value $k.\beta$ at special point.
+Let $y$ be the length-N vector obtained on EvalAll of DPF key. $y$ has value $\beta$ at special point. Let $y^*$ be the length-N vector that has value $k.\beta$ at special point.
 
 Let $y_0$, $y_1$ be the shares of $y$ and $y^*_0$, $y^*_1$ be the shares of $y^*$. Let $r = (r_1, r_2, ..., r_N)$ be an N-length vector with each element $r_i$ is sampled uniformly at random from $\mathbb{F}$. Let $r^* = (r_1^2, ..., r_N^2)$. \\
 
 Let $z_b = \langle r, y_b \rangle$. $z_b^* = \langle r^*, y_b \rangle$. $z_b^{**} = \langle r, y_b^* \rangle$.
 
-Servers use secure computation to check: $(z^2 - z^*) + (k.z - z^{**})$
+Servers use secure computation to check: $(z^2 - z^*) + (k.z - z^{**})$.
+
+\subsection{Drawbacks of Poplar Construction}
+
+If an additive shift is applied to $k$ and the verification still passes, the attacker can conclude that $\beta$ and $k.\beta$ are both 0. To overcome this, $k$ value is embdedded in an OLE correlation.
+
+\section{Technique Overview for Point Function}
+
+Suppose $S_0$ holds $[\bar{y}]_0$ and $S_1$ holds $[\bar{y}_1]$ which are shares of $[0, 0, \beta, ..., 0]$. \\
+
+Let $S_0$ and $S_1$ have a correction word $\omega = [\beta]_0 + [\beta]_1$ along with their respective keys. We want the following correction functionality:\\
+
+\noindent correct($[0]_0, \omega$) = correct($[0]_1, \omega$) \\
+correct($[\beta]_0, \omega$) = correct($[\beta]_1, \omega$) \\
+correct($[\tilde{\beta}]_0, \omega$) $\neq$ correct($[\tilde{\beta}]_1, \omega$) where $\beta \neq \tilde{\beta} \neq 0$ \\
+
+Consider we have $t_0^{(*)} \neq t_1^{(*)}$ and $t_0^{(i)} = t_1^{(i)}$ \\
+
+For $S_0$: \\
+$[0]_0 \oplus (t_0^{(i)}.\omega) = v_i$ \\
+$[\beta]_0 \oplus (t_0^{(*)}.\omega) = v_*$ \\
+
+For $S_1$: \\
+$[0]_1 \oplus (t_1^{(i)}.\omega) = v_i$ \\
+$[\beta]_1 \oplus (t_1^{(*)}.\omega) = v_*$ \\
+
+Correction operation is as follows:
+\begin{enumerate}
+    \item Input is a share $u = [y]_b$. If $b = 1$, set $u \leftarrow -u$
+    \item Hash $u$ to get $v = H(u)$
+    \item If LSB of $v$ is 1, output $v \oplus w$, else output $v$.
+\end{enumerate}
+
+Guarantees
+\begin{enumerate}
+    \item If inputs are shares of 0, outputs are equal.
+    \item Client samples keys until $LSB(H[\beta]_0) \neq LSB(H[\beta]_1)$.
+    \item If inputs are shares of $\beta$, outputs are equal.
+    \item If malicious client corrects $> 1$ error, they've found inputs $u_1 \neq u_2$ and $u_3 \neq u_4$ s.t. $\omega = H(u_1) \oplus H(u_2) = H(u_3) \oplus H(u_4)$
+\end{enumerate}
+
+\section{Technique Overview for Multi-point Function}
+\underline{Idea}: If there are $t$ non-zero points, a multi-point function = Sum of t point functions i.e. Eval must evaluate $t$ DPF shares for each input, even though only 1 share will evaluate to a non-zero value.\\
+
+Consider $m$ buckets, $k$ hash functions $h_1, ..., h_k$ which output $\{1, ..., m\}$. Each special point $\alpha$ from $\{\alpha_1, ..., \alpha_t\}$ is at an index $i = h_j(\alpha)$ for some $1 \leq j \leq k$.\\
+
+Empty bucket holds a DPF sharing of zero function. Buckets that hold an index $\alpha_i$ hold a DPF sharing of $f_{\alpha_i, \beta_i}$. Therefore, we have $m$ DPF shares sent to server.\\
+
+To evaluate $x$, we obtain indices $i_1, i_2, ..., i_k$ from $h_1(x), h_2(x), ..., h_k(x)$ and evaluate $k$ DPFs at buckets $i_1, ..., i_k$ and sum them up. ($m \leq 2t$)
 %\end{document}

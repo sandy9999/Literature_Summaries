@@ -26,12 +26,14 @@
 
 \underline{Weighted Heavy Hitters Problem}: Each input $\alpha$ held by a client is associated with a weight $\beta$ and the servers' goal is to compute subset of inputs for which (some function) the sum of the weights exceeds T.\\
 
-\underline{Example of Weighted Heavy Hitters}: If each input is a site visited by a user, then the weight might represent the time spend on the site by that user; and the T-weighted heavy hitters would represent the sites with the highest engagement (i.e. time spent on the site).
+\underline{Example of Weighted Heavy Hitters}: If each input is a site visited by a user, then the weight might represent the time spend on the site by that user; and the T-weighted heavy hitters would represent the sites with the highest engagement (i.e. time spent on the site).\\
+
+\underline{Attribute based Metrics Problem}: Each client has a pair $(\alpha, \beta) \in \{0, 1\}^n \times L$ where $\alpha$ is the client's attribute, and $\beta$ is the client's value. Servers/aggregators evaluate the clients' inputs on a set of attributes of interest $[x_1, ..., x_A]$. Result: Aggregate of reports that share the same attribute.
 
 \subsection{Contributions of Mastic}
 \begin{enumerate}
-   \item \textbf{Weighted Heavy Hitters}: First to solved weighted heavy hitters (not supported by Prio or Poplar)
-   \item \textbf{Attribute based Metrics}: Concrete improvements over Prio and Poplar in grouping general-purpose metrics by user attributes such as geographic location, browser version etc.
+   \item \textbf{Weighted Heavy Hitters}: First to solve weighted heavy hitters (not supported by Prio/Poplar/PLASMA)
+   \item \textbf{Attribute based Metrics}: Concrete improvements over Prio and Poplar in grouping general-purpose metrics by user attributes such as geographic location, browser version etc. (PRIO doesn't support such aggregation with grouping)
     \begin{itemize}
         \item Private network error logging
         \item Browser telemetry
@@ -44,8 +46,15 @@
     \end{itemize}
 \end{enumerate}
 
+\subsection{Benchmarking/Comparison with Past Works}
+For weighted heavy hitters, comparison is done with Poplar in plain mode only.\\
+
+For attribute based metrics, comparison is done with extended version of PRIO.
+
 \subsection{Remarks}
 Poplar, PLASMA, Mastic are DP compatible, can be modified to report differentially private aggregations.
+
+They claim in this work that robustness in presence of corrupt server is achievable only at a significant cost (either by adding third server as in PLASMA, or using verifiable computation in 2-Server setting where servers prove correctness of their computation using ZK proof)
 
 \section{Primitives}
 \subsection{VIDPF}
@@ -74,6 +83,37 @@ Security in Random Oracle model. \\
     \item Zero-Knowledge: When client and at least 1 server is honest, execution of the proof system reveals nothing about the client value beyond its validity.
 \end{enumerate}
 
+\section{Technique Overview for Weighted Heavy Hitters}
+\subsection{Client Report Generation}
+\begin{enumerate}
+    \item Each client $C_i$ holds bit string input $\alpha_i \in \{0, 1\}^n$ and associated weight $\beta_i$ in some language $L$ of valid weights ($L$ can be bit, integer in public range or one-hot vector)
+    \item Client encodes $(\alpha_i, \beta_i)$ using VIDPF key generation algorithm that produces keys: $k_{(i, 0)}$, $k_{(i, 1)}$, public share $pub_i$.
+    \item Client generates ZK proof to assert to servers that $\beta_i \in L$
+    \begin{itemize}
+        \item Client passes secret shares of $\beta_i$ to proof gen algorithm that servers receive when evaluating VIDPF at root (empty bit string $\epsilon$). How? Client invokes EvalRoot twice, each time with inputs/keys of each server.
+        \item ZK Prove algorithm returns partial proofs: $\pi_{(i, 0)}^{szk}$, $\pi_{(i, 1)}^{szk}$ and a nonce to the client.
+
+    \end{itemize}
+    \item Client sends nonce, public share, corr. VIDPF key and partial proof to each server.
+\end{enumerate}
+
+\subsection{Aggregator Computation}
+\begin{enumerate}
+    \item Leader server ($S_0$ WLOG) chooses verification key vk, sends to $S_1$
+    \item Note: $HH^i$ where $i \in [0, .., n]$ holds set of weighted heavy hitter bit strings of length $n$. Initially, they are empty sets.
+    \item Verifying Client Inputs (to handle Malicious clients) 
+    \begin{itemize}
+        \item Weight check: $[\beta_i]_0 + [\beta_i]_1 \in L$ (Root level check using EvalRoot + shared ZK.Query + shared ZK.Decide, if not valid, client's input string removed from candidate strings)
+        \item One-Hotness check: For each client, at each level, only 1 pair of secret shares should correspond to $\beta_i$. (Assured by verifiability property of VIDPF. Each proof is computed from proof of parent node s.t. if each server computes same proof for $p$, there is at most 1 prefix of length $|p|$ that evaluates to a non-zero value)
+        \item Path check: Each node along $\alpha_i$ path of prefix tree has weight $\beta_i$ (If $C_i$'s $\alpha_i = 111...$, then all evaluations of $C_i$'s VIDPF keys at level 2 (00, 01, 10) yield shares of 0, evaluation on $p = 11$ returns shares of $\beta_i$. At the next level, servers need to verify evaluated path i.e. evaluation on $p = 111$ returns shares of $\beta_i$ as in previous level, while other evaluations return secret shares of 0.) \underline{Key Idea}: Check that output for $p$ = Output for $p || 0$ + Output for $p || 1$ i.e. Output for $p$ - Output for $p || 0$ - Output for $p || 1$ = 0. Check that shares of this are equal using hashing.
+    \end{itemize}
+    \item Client sends nonce, public share, corr. VIDPF key and partial proof to each server.
+\end{enumerate}
+
+\section{Technique Overview for Attribute-based Metrics}
+Subset of tree traversal algorithm. Difference: Instead of using weights to decide which paths to traverse, servers decide in advance which leaves (i.e. attributes) to evaluate and traverse the path to each of these leaves. (There's a part I didn't get here, need to check) \\
+
+If Prio were extended to support this, instead of aggregating length-m histogram, we aggregate length-(m.A) histogram, where A = no. of attributes. $O(A)$ overhead in communication. In Mastic, same functionality results in only $O(n)$ commn overhead, where n = length in bits of each attribute.
 % Bibliography
 %-----------------------------------------------------------------
 %\begin{thebibliography}{99}
