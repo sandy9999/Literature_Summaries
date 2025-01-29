@@ -91,6 +91,7 @@ For q multi-predicate queries with p predicates per query:\\
 
 \underline{Cost}: $qp(\lambda \ell + 3n \log n)$ bits, 1 round (Check?)
 
+\begin{comment}
 \section{Our Explorations}
 
 Consider $m$ single bit attributes of a database, $A_m$, $A_{m-1}$, ..., $A_1$ (writing it this way as it's easier to visualize each record as an m-bit integer). There are $n$ records. \\
@@ -138,7 +139,7 @@ We have $n$ DCF keys, each of size roughly $\lambda m \log n$ bits. We have $2^2
 What we can observe is that if the attributes are ordered in such a way that the GROUP BY attributes are right at the beginning (say we group by $A_m, A_{m-1}, A_{m-2}$), then irrespective of how many attributes we group by, we only have to deal with one interval).\\
 
 The intervals are public (splines concept), so we can stick with using a single DCF key for each record. The no. of invocations of the DCF i.e. the compute will be proportional to the no. of intervals, so we want to optimize that as well.
-
+\end{comment}
 
 
 % Bibliography

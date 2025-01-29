@@ -1,0 +1,54 @@
+%\documentclass{article}
+%\usepackage[
+%    left=1.2in,
+%    right=1.2in,
+%    top=0.4in,
+%    bottom=0.7in,
+%    paperheight=11in,
+%    paperwidth=8.5in
+%]{geometry}
+
+%\usepackage{layout}
+\clearpage
+\mytitle{Non-Interactive Secure Computation Based on Cut-and-Choose \large \\Paper Summary}
+%\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+%\author{Sandhya Saravanan\\
+%  \small MSR, India\\\\
+%}
+%\date{\vspace{-5ex}}
+
+%\begin{document}
+%\maketitle
+\setcounter{section}{0} % Restart section numbering
+
+\section{Summary}
+
+\subsection{Cost}
+\begin{enumerate}
+    \item $t$ GCs to achieve cheating probability $2^{-t}$ like \cite{Lin13}, but with 1 round 2PC interaction.
+    \item $O(tn_1)$ symmetric key operations + $O(tn_2 + t^2)$ exponentiations where $n_i$ is $P_i$'s input length.
+    \item For soundness $2^{-40}$, 44 GCs required. Communication: 19 GCs.
+\end{enumerate}
+
+Secure under DDH assumption in CRS model.
+
+% Bibliography
+%-----------------------------------------------------------------
+\begin{thebibliography}{99}
+
+\bibitem{LP07} Yehuda Lindell, Benny Pinkas \emph{An efficient protocol for secure two-party computation in the presence of malicious adversaries}, {EUROCRYPT} (2007)
+\bibitem{LP11} Yehuda Lindell, Benny Pinkas \emph{Secure two-party computation via cut-and-choose oblivious transfer}, {TCC} (2011)
+\bibitem{sS11} Abhi Shelat and Chih-Hao Shen \emph{Two-output secure computation with malicious adversaries}, {EUROCRYPT} (2011)
+\bibitem{Lin13} Yehuda Lindell, Bar-Ilan University \emph{Fast Cut-and-Choose Based Protocols for Malicious and Covert Adversaries}, {CRYPTO} (2013)
+\bibitem{Bra13} Luis T. A. N. Brandao \emph{Secure two-party computation with reusable bit-commitments, via a cut-and-choose with forge-and-lose technique}, {ASIACRYPT} (2013)
+\bibitem{HKE13} Yan Huang, Jonathan Katz, and David Evans \emph{Efficient secure two-party computation using symmetric cut-and-choose}, {CRYPTO} (2013)
+\bibitem{LR14} Yehuda Lindell, Ben Riva \emph{Cut-and-choose Yao-based secure computation in the online/offline and batch settings}, {CRYPTO} (2014)
+\bibitem{HKK+14} Yan Huang, Jonathan Katz, Vladimir Kolesnikov, Ranjit Kumaresan and Alex J Malozemoff \emph{Amortizing garbled circuits}, {CRYPTO} (2014)
+\bibitem{RR16} Peter Rindal, Mike Rosulek \emph{Faster malicious 2-party secure computation with online/offline dual execution}, {EUROCRYPT} (2017)
+\bibitem{WMK17} Xiao Wang, Alex J. Malozemoff, Jonathan Katz \emph{Faster secure two-party computation in the single-execution setting}, {EUROCRYPT} (2017)
+\bibitem{NST17} Jesper Buus Nielsen, Thomas Schneider, and Roberto Triletti \emph{Constant round maliciously
+secure 2PC with function-independent preprocessing using LEGO}, {NDSS} (2017)
+
+\end{thebibliography}
+
+%\end{document}

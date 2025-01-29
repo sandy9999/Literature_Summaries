@@ -1,0 +1,81 @@
+%\documentclass{article}
+%\usepackage[
+%    left=1.2in,
+%    right=1.2in,
+%    top=0.4in,
+%    bottom=0.7in,
+%    paperheight=11in,
+%    paperwidth=8.5in
+%]{geometry}
+
+%\usepackage{layout}
+\clearpage
+\mytitle{DUPLO: Unifying Cut-and-Choose for Garbled Circuits \large \\Paper Summary}
+%\renewcommand{\title}{TVA: A multi-party computation system for secure and expressive time series analytics \large \\Paper Summary}
+%\author{Sandhya Saravanan\\
+%  \small MSR, India\\\\
+%}
+%\date{\vspace{-5ex}}
+
+%\begin{document}
+%\maketitle
+\setcounter{section}{0} % Restart section numbering
+
+\section{Summary}
+
+\subsection{Key Idea}
+Traditional cut-and-choose operates at the level of entire circuits. In LEGO, cut-and-choose is at the level of individual gates. In this work, cut-and-choose operates on the level of arbitrary circuit "components" which can range from single gate to entire circuit.
+
+\subsection{Contributions}
+\begin{enumerate}
+    \item Previous protocol techniques modified and optimized to work with general Cut-And-choose components 
+    \item Extension of Frigate circuit compiler to effectively express any C-style program in terms of components that can be efficiently processed using this protocol. 
+\end{enumerate}
+
+\subsection{Previous Techniques}
+Typical ways to make malicious security more practical. Improvements seen in:
+\begin{enumerate}
+    \item Reduce no. of GCs 
+    \item Trade-offs between offline and online computation phases
+    \item Slight weakenings of security
+\end{enumerate}
+
+\underline{Replication Factor}: Multiplicative overhead in garbling material due to replication (of circuits in cut-and-choose).
+
+\subsection{Replication Factor in Previous Works}
+For statistical security $2^{-s}$ \\
+
+Cut-And-Choose
+\begin{enumerate}
+    \item \cite{sS11}: $3s$ (Evaluation phase requires majority of unopened circuits to be correct)
+    \item \cite{Bra13} \cite{Lin13}: $s$ (Evaluation phase requires at least 1 unopened circuit to be correct) 
+    \item \cite{LR14} \cite{HKK+14}: $O(1) + O(s/\log N)$ (Amortized setting where parties perform $N$ independent evaluations of same circuit. So all evaluations share common cut-and-choose phase where only small fraction of circuits to be opened)
+    \item LEGO: $2 + O(s/\log N)$ (If Evaluated function has $N$ gates)
+\end{enumerate}
+
+\subsection{Selling Point}
+\begin{enumerate}
+    \item $4-7 \times$ running time improvement over \cite{WMK17} for certain circuits
+    \item $4 \times$ running time improvement over \cite{RR16} in multi-execution setting
+\end{enumerate}
+
+% Bibliography
+%-----------------------------------------------------------------
+\begin{thebibliography}{99}
+
+\bibitem{LP07} Yehuda Lindell, Benny Pinkas \emph{An efficient protocol for secure two-party computation in the presence of malicious adversaries}, {EUROCRYPT} (2007)
+\bibitem{LP11} Yehuda Lindell, Benny Pinkas \emph{Secure two-party computation via cut-and-choose oblivious transfer}, {TCC} (2011)
+\bibitem{sS11} Abhi Shelat and Chih-Hao Shen \emph{Two-output secure computation with malicious adversaries}, {EUROCRYPT} (2011)
+\bibitem{Lin13} Yehuda Lindell, Bar-Ilan University \emph{Fast Cut-and-Choose Based Protocols for Malicious and Covert Adversaries}, {CRYPTO} (2013)
+\bibitem{Bra13} Luis T. A. N. Brandao \emph{Secure two-party computation with reusable bit-commitments, via a cut-and-choose with forge-and-lose technique}, {ASIACRYPT} (2013)
+\bibitem{HKE13} Yan Huang, Jonathan Katz, and David Evans \emph{Efficient secure two-party computation using symmetric cut-and-choose}, {CRYPTO} (2013)
+\bibitem{LR14} Yehuda Lindell, Ben Riva \emph{Cut-and-choose Yao-based secure computation in the online/offline and batch settings}, {CRYPTO} (2014)
+\bibitem{HKK+14} Yan Huang, Jonathan Katz, Vladimir Kolesnikov, Ranjit Kumaresan and Alex J Malozemoff \emph{Amortizing garbled circuits}, {CRYPTO} (2014)
+\bibitem{RR16} Peter Rindal, Mike Rosulek \emph{Faster malicious 2-party secure computation with online/offline dual execution}, {EUROCRYPT} (2017)
+\bibitem{WMK17} Xiao Wang, Alex J. Malozemoff, Jonathan Katz \emph{Faster secure two-party computation in the single-execution setting}, {EUROCRYPT} (2017)
+\bibitem{NST17} Jesper Buus Nielsen, Thomas Schneider, and Roberto Triletti \emph{Constant round maliciously
+secure 2PC with function-independent preprocessing using LEGO}, {NDSS} (2017)
+
+\end{thebibliography}
+
+%\end{document}
